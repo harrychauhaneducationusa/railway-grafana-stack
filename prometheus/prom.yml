@@ -11,7 +11,30 @@ scrape_configs:
   #   static_configs:
   #     - targets: ['example_api:9091']
 
-  #  ? TODO: add your services here
+  # mockcoach-ai — production app
+  # Uncomment and set the target URL once the service is deployed on Railway.
+  # The /metrics endpoint is exposed by express-prometheus-middleware.
+  # - job_name: 'mockcoach-ai-prod'
+  #   scheme: https
+  #   static_configs:
+  #     - targets: ['<MOCKCOACH_AI_PROD_HOST>']
+  #   metrics_path: /metrics
+
+  # mockcoach-ai — staging app
+  # - job_name: 'mockcoach-ai-staging'
+  #   scheme: https
+  #   static_configs:
+  #     - targets: ['<MOCKCOACH_AI_STAGING_HOST>']
+  #   metrics_path: /metrics
+
+  # mockcoach-worker-prod — background job worker
+  # - job_name: 'mockcoach-worker-prod'
+  #   scheme: https
+  #   static_configs:
+  #     - targets: ['<MOCKCOACH_WORKER_PROD_HOST>']
+  #   metrics_path: /metrics
+
+  #  ? TODO: add your other services here
   # - job_name: 'your-job-name'
   #   scheme: https
   #   static_configs:

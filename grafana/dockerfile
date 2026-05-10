@@ -2,5 +2,9 @@ ARG VERSION=11.5.2
 
 FROM grafana/grafana-oss:${VERSION}
 
-# copy the datasources and dashboards
+# copy the datasources and dashboard provisioning config
 COPY datasources /etc/grafana/provisioning/datasources
+COPY provisioning/dashboards /etc/grafana/provisioning/dashboards
+
+# copy the dashboard JSON files
+COPY dashboards /etc/grafana/dashboards
