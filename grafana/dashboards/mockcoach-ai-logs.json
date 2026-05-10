@@ -1,0 +1,421 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.0.0" },
+    { "type": "datasource", "id": "loki", "name": "Loki", "version": "1.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Centralised log aggregation for mockcoach-ai and mockcoach-worker across production and staging. Includes log volume, error rate, and full log streams.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": true,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": ["mockcoach-ai"],
+      "targetBlank": false,
+      "title": "mockcoach-ai Dashboards",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "📊 Log Volume",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Total log lines per minute from the production app. A sudden spike often precedes or accompanies an incident.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "lines/min", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 60, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "smooth", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }, "thresholdsStyle": { "mode": "off" } },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "error.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "warn.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "info.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "debug.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "gray", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "title": "Log Volume by Level — Production",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"error\"}[1m]))",
+          "legendFormat": "error",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"warn\"}[1m]))",
+          "legendFormat": "warn",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"info\"}[1m]))",
+          "legendFormat": "info",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"debug\"}[1m]))",
+          "legendFormat": "debug",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Total log lines per minute from the staging app.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "lines/min", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 60, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "smooth", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }, "thresholdsStyle": { "mode": "off" } },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "error.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "warn.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "info.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "debug.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "gray", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 2,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "title": "Log Volume by Level — Staging",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"error\"}[1m]))",
+          "legendFormat": "error",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"warn\"}[1m]))",
+          "legendFormat": "warn",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"info\"}[1m]))",
+          "legendFormat": "info",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"debug\"}[1m]))",
+          "legendFormat": "debug",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Error log rate per minute for both environments. Useful for quick comparison.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "errors/min", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 20, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "line+area" } },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "prod errors" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "staging errors" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 9 },
+      "id": 3,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "title": "Error Log Rate — Production vs Staging",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\"} |= \"error\" [1m]))",
+          "legendFormat": "prod errors",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\"} |= \"error\" [1m]))",
+          "legendFormat": "staging errors",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\"} |= \"error\" [1m]))",
+          "legendFormat": "worker errors",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 101,
+      "title": "🔴 Error & Warning Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "All error-level log lines from the production app. Use the search bar to filter by message content.",
+      "gridPos": { "h": 12, "w": 12, "x": 0, "y": 18 },
+      "id": 4,
+      "options": {
+        "dedupStrategy": "signature",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "Error Logs — Production",
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "{app=\"mockcoach-ai\", env=\"production\"} |= \"error\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "All error-level log lines from the staging app.",
+      "gridPos": { "h": 12, "w": 12, "x": 12, "y": 18 },
+      "id": 5,
+      "options": {
+        "dedupStrategy": "signature",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "Error Logs — Staging",
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "{app=\"mockcoach-ai\", env=\"staging\"} |= \"error\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "id": 102,
+      "title": "📋 Full Log Streams",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Complete log stream from the production app. All log levels included.",
+      "gridPos": { "h": 14, "w": 12, "x": 0, "y": 31 },
+      "id": 6,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "All Logs — Production",
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "{app=\"mockcoach-ai\", env=\"production\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Complete log stream from the staging app. All log levels included.",
+      "gridPos": { "h": 14, "w": 12, "x": 12, "y": 31 },
+      "id": 7,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "All Logs — Staging",
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "{app=\"mockcoach-ai\", env=\"staging\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "id": 103,
+      "title": "⚙️ Worker Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Log volume by level for the background worker process.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "lines/min", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "fillOpacity": 60, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "smooth", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "normal" }, "thresholdsStyle": { "mode": "off" } },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "error.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "warn.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "info.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
+      "id": 8,
+      "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "title": "Worker Log Volume by Level",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\", level=\"error\"}[1m]))",
+          "legendFormat": "error",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\", level=\"warn\"}[1m]))",
+          "legendFormat": "warn",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\", level=\"info\"}[1m]))",
+          "legendFormat": "info",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Full log stream from the background worker process.",
+      "gridPos": { "h": 14, "w": 12, "x": 12, "y": 46 },
+      "id": 9,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "Worker Logs — Production",
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "{app=\"mockcoach-worker\", env=\"production\"}",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+      "description": "Worker error logs only — useful for quick triage.",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 54 },
+      "id": 10,
+      "options": {
+        "dedupStrategy": "signature",
+        "enableLogDetails": true,
+        "prettifyLogMessage": true,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "Worker Error Logs — Production",
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "grafana_lokiq" },
+          "expr": "{app=\"mockcoach-worker\", env=\"production\"} |= \"error\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["mockcoach-ai", "logs", "loki"],
+  "templating": { "list": [] },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "mockcoach-ai — Logs",
+  "uid": "mockcoach-ai-logs",
+  "version": 1
+}
