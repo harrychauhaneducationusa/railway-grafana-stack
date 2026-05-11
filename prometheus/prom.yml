@@ -36,12 +36,9 @@ scrape_configs:
       - targets: ['mockcoach-ai.railway.internal:8080']
 
   # mockcoach-worker-prod — BullMQ workers (GET /metrics on worker health server).
-  # scrape_timeout must be <= scrape_interval (global is 15s); this job uses a longer interval.
   - job_name: 'mockcoach-worker-prod'
     scheme: http
     metrics_path: /metrics
-    scrape_interval: 30s
-    scrape_timeout: 25s
     static_configs:
       # Replace 8080 with this service’s Railway PORT if different.
       - targets: ['mockcoach-worker-prod.railway.internal:8080']
