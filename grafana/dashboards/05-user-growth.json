@@ -1,14 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_POSTHOG",
-      "label": "-- PostHog --",
-      "description": "Placeholder: map to Grafana TestData on import for sample charts, or install the PostHog datasource plugin and reconnect. Panel descriptions document analyticsService.js events to build in PostHog.",
-      "type": "datasource",
-      "pluginId": "testdata",
-      "pluginName": "TestData"
-    }
-  ],
   "annotations": {
     "list": []
   },
@@ -41,7 +31,7 @@
     {
       "datasource": {
         "type": "testdata",
-        "uid": "${DS_POSTHOG}"
+        "uid": "grafana_testdata"
       },
       "gridPos": {
         "h": 8,
@@ -113,7 +103,7 @@
         {
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "refId": "A",
           "scenarioId": "random_walk",
@@ -127,7 +117,7 @@
     {
       "datasource": {
         "type": "testdata",
-        "uid": "${DS_POSTHOG}"
+        "uid": "grafana_testdata"
       },
       "gridPos": {
         "h": 4,
@@ -173,7 +163,7 @@
         {
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "refId": "A",
           "scenarioId": "random_walk",
@@ -192,7 +182,7 @@
       "type": "barchart",
       "datasource": {
         "type": "testdata",
-        "uid": "${DS_POSTHOG}"
+        "uid": "grafana_testdata"
       },
       "gridPos": {
         "h": 8,
@@ -221,7 +211,7 @@
           "refId": "A",
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "scenarioId": "csv_metric_values",
           "stringInput": "120",
@@ -231,7 +221,7 @@
           "refId": "B",
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "scenarioId": "csv_metric_values",
           "stringInput": "95",
@@ -241,7 +231,7 @@
           "refId": "C",
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "scenarioId": "csv_metric_values",
           "stringInput": "62",
@@ -252,7 +242,7 @@
     {
       "datasource": {
         "type": "testdata",
-        "uid": "${DS_POSTHOG}"
+        "uid": "grafana_testdata"
       },
       "gridPos": {
         "h": 8,
@@ -324,7 +314,7 @@
         {
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "refId": "A",
           "scenarioId": "random_walk",
@@ -338,7 +328,7 @@
     {
       "datasource": {
         "type": "testdata",
-        "uid": "${DS_POSTHOG}"
+        "uid": "grafana_testdata"
       },
       "gridPos": {
         "h": 8,
@@ -410,7 +400,7 @@
         {
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "refId": "A",
           "scenarioId": "random_walk",
@@ -428,7 +418,7 @@
       "type": "stat",
       "datasource": {
         "type": "testdata",
-        "uid": "${DS_POSTHOG}"
+        "uid": "grafana_testdata"
       },
       "gridPos": {
         "h": 6,
@@ -474,7 +464,7 @@
         {
           "datasource": {
             "type": "testdata",
-            "uid": "${DS_POSTHOG}"
+            "uid": "grafana_testdata"
           },
           "refId": "A",
           "scenarioId": "random_walk",

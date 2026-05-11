@@ -44,3 +44,11 @@ datasources:
     basicAuthUser:
     withCredentials:
     isDefault: false
+  # Used by 05–08 business dashboards (PostHog placeholders) until a real analytics DS exists
+  - name: TestData
+    type: testdata
+    access: proxy
+    orgId: 1
+    uid: grafana_testdata
+    editable: true
+    isDefault: false
