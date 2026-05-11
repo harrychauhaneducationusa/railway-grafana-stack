@@ -2,9 +2,17 @@ ARG VERSION=v3.2.1
 
 FROM prom/prometheus:${VERSION}
 
+USER root
+# Writable by the prometheus (nobody) user at runtime for bearer_token_file.
+RUN mkdir -p /etc/prometheus/secrets \
+  && chown nobody /etc/prometheus/secrets \
+  && chmod 700 /etc/prometheus/secrets
+
 COPY prom.yml /etc/prometheus/prom.yml
 COPY entrypoint.sh /entrypoint.sh
 
+USER nobody
+
 # Run via sh so we do not chmod (some builders, e.g. Railway, deny chmod on COPY layers).
+# Railway: leave "Custom Start Command" empty so this ENTRYPOINT runs (required for bearer file).
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
-CMD ["--config.file=/etc/prometheus/prom.yml", "--storage.tsdb.path=/prometheus"]
