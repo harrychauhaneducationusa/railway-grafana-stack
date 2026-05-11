@@ -40,11 +40,11 @@ scrape_configs:
   #   metrics_path: /metrics
 
   # mockcoach-worker-prod — background job worker
-  # - job_name: 'mockcoach-worker-prod'
-  #   scheme: https
-  #   static_configs:
-  #     - targets: ['<MOCKCOACH_WORKER_PROD_HOST>']
-  #   metrics_path: /metrics
+  - job_name: 'mockcoach-worker-prod'
+    scheme: http
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['mockcoach-worker-prod.railway.internal:8080']
 
   #  ? TODO: add your other services here
   # - job_name: 'your-job-name'
