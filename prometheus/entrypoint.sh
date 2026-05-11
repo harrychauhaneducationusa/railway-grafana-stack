@@ -7,7 +7,10 @@ SECRETS_DIR=/etc/prometheus/secrets
 mkdir -p "$SECRETS_DIR"
 umask 077
 printf '%s' "${METRICS_BEARER_TOKEN:-}" >"$SECRETS_DIR/mockcoach-ai-bearer"
-# Hardcode args so scraping works even if the platform does not pass Docker CMD through.
+# Keep flags in sync with what you used in Railway "Custom Start Command" before:
+# that field replaces the image ENTRYPOINT, so the bearer file above never ran.
+# Clear Custom Start Command in Railway and rely on this script instead.
 exec /bin/prometheus \
   --config.file=/etc/prometheus/prom.yml \
-  --storage.tsdb.path=/prometheus
+  --storage.tsdb.path=/prometheus \
+  --web.enable-remote-write-receiver

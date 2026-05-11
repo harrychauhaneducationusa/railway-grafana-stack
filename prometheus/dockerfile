@@ -14,5 +14,6 @@ COPY entrypoint.sh /entrypoint.sh
 USER nobody
 
 # Run via sh so we do not chmod (some builders, e.g. Railway, deny chmod on COPY layers).
-# Railway: leave "Custom Start Command" empty so this ENTRYPOINT runs (required for bearer file).
+# Railway: leave "Custom Start Command" EMPTY. If set, it replaces this ENTRYPOINT and
+# METRICS_BEARER_TOKEN is never written (mockcoach-ai scrape fails). Remote-write flag is in entrypoint.sh.
 ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
