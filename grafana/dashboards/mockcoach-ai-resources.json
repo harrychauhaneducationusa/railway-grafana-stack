@@ -17,7 +17,7 @@
       }
     ]
   },
-  "description": "System resource utilisation for mockcoach-ai: CPU, memory, disk I/O, and Node.js process metrics across production and staging.",
+  "description": "Node.js process metrics from /metrics (job mockcoach-ai). CPU/memory/GC use the mockcoach_ prefix from prom-client. Panels that query node_disk_*, node_network_*, or node_filesystem_* need a separate node_exporter scrape — they stay empty until that exists. Staging columns use job mockcoach-ai-staging when you add that scrape job.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -67,7 +67,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "100 * rate(process_cpu_seconds_total{job=\"mockcoach-ai-prod\"}[2m])",
+          "expr": "100 * (rate(mockcoach_process_cpu_user_seconds_total{job=\"mockcoach-ai\"}[2m]) + rate(mockcoach_process_cpu_system_seconds_total{job=\"mockcoach-ai\"}[2m]))",
           "legendFormat": "cpu % (prod)",
           "refId": "A"
         }
@@ -96,7 +96,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "100 * rate(process_cpu_seconds_total{job=\"mockcoach-ai-staging\"}[2m])",
+          "expr": "100 * (rate(mockcoach_process_cpu_user_seconds_total{job=\"mockcoach-ai-staging\"}[2m]) + rate(mockcoach_process_cpu_system_seconds_total{job=\"mockcoach-ai-staging\"}[2m]))",
           "legendFormat": "cpu % (staging)",
           "refId": "A"
         }
@@ -132,19 +132,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "nodejs_heap_size_used_bytes{job=\"mockcoach-ai-prod\"}",
+          "expr": "mockcoach_nodejs_heap_size_used_bytes{job=\"mockcoach-ai\"}",
           "legendFormat": "heap used (prod)",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "nodejs_heap_size_total_bytes{job=\"mockcoach-ai-prod\"}",
+          "expr": "mockcoach_nodejs_heap_size_total_bytes{job=\"mockcoach-ai\"}",
           "legendFormat": "heap total (prod)",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "process_resident_memory_bytes{job=\"mockcoach-ai-prod\"}",
+          "expr": "mockcoach_process_resident_memory_bytes{job=\"mockcoach-ai\"}",
           "legendFormat": "RSS (prod)",
           "refId": "C"
         }
@@ -173,19 +173,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "nodejs_heap_size_used_bytes{job=\"mockcoach-ai-staging\"}",
+          "expr": "mockcoach_nodejs_heap_size_used_bytes{job=\"mockcoach-ai-staging\"}",
           "legendFormat": "heap used (staging)",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "nodejs_heap_size_total_bytes{job=\"mockcoach-ai-staging\"}",
+          "expr": "mockcoach_nodejs_heap_size_total_bytes{job=\"mockcoach-ai-staging\"}",
           "legendFormat": "heap total (staging)",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "process_resident_memory_bytes{job=\"mockcoach-ai-staging\"}",
+          "expr": "mockcoach_process_resident_memory_bytes{job=\"mockcoach-ai-staging\"}",
           "legendFormat": "RSS (staging)",
           "refId": "C"
         }
@@ -212,7 +212,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "rate(nodejs_gc_duration_seconds_sum{job=\"mockcoach-ai-prod\"}[2m])",
+          "expr": "rate(mockcoach_nodejs_gc_duration_seconds_sum{job=\"mockcoach-ai\"}[2m])",
           "legendFormat": "{{kind}}",
           "refId": "A"
         }
@@ -239,7 +239,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "rate(nodejs_gc_duration_seconds_sum{job=\"mockcoach-ai-staging\"}[2m])",
+          "expr": "rate(mockcoach_nodejs_gc_duration_seconds_sum{job=\"mockcoach-ai-staging\"}[2m])",
           "legendFormat": "{{kind}}",
           "refId": "A"
         }
@@ -249,7 +249,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
       "id": 102,
-      "title": "💾 Disk I/O",
+      "title": "💾 Disk I/O (node_exporter — not from Node /metrics)",
       "type": "row"
     },
     {
@@ -275,13 +275,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "rate(node_disk_read_bytes_total{job=\"mockcoach-ai-prod\"}[2m])",
+          "expr": "rate(node_disk_read_bytes_total{job=\"mockcoach-ai\"}[2m])",
           "legendFormat": "read {{device}}",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "rate(node_disk_written_bytes_total{job=\"mockcoach-ai-prod\"}[2m])",
+          "expr": "rate(node_disk_written_bytes_total{job=\"mockcoach-ai\"}[2m])",
           "legendFormat": "write {{device}}",
           "refId": "B"
         }
@@ -326,7 +326,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
       "id": 103,
-      "title": "🌐 Network I/O",
+      "title": "🌐 Network I/O (node_exporter — not from Node /metrics)",
       "type": "row"
     },
     {
@@ -352,13 +352,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "rate(node_network_receive_bytes_total{job=\"mockcoach-ai-prod\",device!~\"lo|veth.*\"}[2m])",
+          "expr": "rate(node_network_receive_bytes_total{job=\"mockcoach-ai\",device!~\"lo|veth.*\"}[2m])",
           "legendFormat": "rx {{device}}",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "rate(node_network_transmit_bytes_total{job=\"mockcoach-ai-prod\",device!~\"lo|veth.*\"}[2m])",
+          "expr": "rate(node_network_transmit_bytes_total{job=\"mockcoach-ai\",device!~\"lo|veth.*\"}[2m])",
           "legendFormat": "tx {{device}}",
           "refId": "B"
         }
@@ -403,7 +403,7 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 44 },
       "id": 104,
-      "title": "📂 Disk Usage",
+      "title": "📂 Disk Usage (node_exporter — not from Node /metrics)",
       "type": "row"
     },
     {
@@ -436,7 +436,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "100 * (1 - node_filesystem_avail_bytes{job=\"mockcoach-ai-prod\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{job=\"mockcoach-ai-prod\",fstype!~\"tmpfs|overlay\"})",
+          "expr": "100 * (1 - node_filesystem_avail_bytes{job=\"mockcoach-ai\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{job=\"mockcoach-ai\",fstype!~\"tmpfs|overlay\"})",
           "legendFormat": "{{mountpoint}}",
           "refId": "A"
         }
@@ -501,19 +501,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "process_open_fds{job=\"mockcoach-ai-prod\"}",
+          "expr": "mockcoach_process_open_fds{job=\"mockcoach-ai\"}",
           "legendFormat": "open fds (prod)",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "process_max_fds{job=\"mockcoach-ai-prod\"}",
+          "expr": "mockcoach_process_max_fds{job=\"mockcoach-ai\"}",
           "legendFormat": "max fds (prod)",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "process_open_fds{job=\"mockcoach-ai-staging\"}",
+          "expr": "mockcoach_process_open_fds{job=\"mockcoach-ai-staging\"}",
           "legendFormat": "open fds (staging)",
           "refId": "C"
         }

@@ -67,7 +67,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "up{job=\"mockcoach-ai-prod\"}",
+          "expr": "up{job=\"mockcoach-ai\"}",
           "legendFormat": "prod",
           "refId": "A"
         }
@@ -122,7 +122,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-prod\"}[2m]))",
+          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai\"}[2m]))",
           "legendFormat": "prod",
           "refId": "A"
         },
@@ -156,7 +156,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "100 * sum(rate(http_requests_total{job=\"mockcoach-ai-prod\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"mockcoach-ai-prod\"}[5m]))",
+          "expr": "100 * sum(rate(http_requests_total{job=\"mockcoach-ai\",status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"mockcoach-ai\"}[5m]))",
           "legendFormat": "error %",
           "refId": "A"
         }
@@ -184,7 +184,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "100 * sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"mockcoach-ai-staging\"}[5m]))",
+          "expr": "100 * sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"mockcoach-ai-staging\"}[5m]))",
           "legendFormat": "error %",
           "refId": "A"
         }
@@ -210,7 +210,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"mockcoach-ai-prod\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"mockcoach-ai\"}[5m])) by (le))",
           "legendFormat": "p99",
           "refId": "A"
         }
@@ -262,7 +262,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"mockcoach-ai-prod\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"mockcoach-ai\"}[5m])) by (le))",
           "legendFormat": "p50",
           "refId": "A"
         }
@@ -326,19 +326,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-prod\",status=~\"2..\"}[2m]))",
+          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai\",status_code=~\"2..\"}[2m]))",
           "legendFormat": "2xx",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-prod\",status=~\"4..\"}[2m]))",
+          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai\",status_code=~\"4..\"}[2m]))",
           "legendFormat": "4xx",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-prod\",status=~\"5..\"}[2m]))",
+          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai\",status_code=~\"5..\"}[2m]))",
           "legendFormat": "5xx",
           "refId": "C"
         }
@@ -369,19 +369,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status=~\"2..\"}[2m]))",
+          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status_code=~\"2..\"}[2m]))",
           "legendFormat": "2xx",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status=~\"4..\"}[2m]))",
+          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status_code=~\"4..\"}[2m]))",
           "legendFormat": "4xx",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
-          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status=~\"5..\"}[2m]))",
+          "expr": "sum(rate(http_requests_total{job=\"mockcoach-ai-staging\",status_code=~\"5..\"}[2m]))",
           "legendFormat": "5xx",
           "refId": "C"
         }
