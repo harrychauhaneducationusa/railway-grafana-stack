@@ -18,7 +18,7 @@
       }
     ]
   },
-  "description": "Centralised log aggregation for mockcoach-ai and mockcoach-worker across production and staging. Includes log volume, error rate, and full log streams.",
+  "description": "Loki queries use labels from pino-loki: service=mockcoach-api, env=production|staging, level=10–60 (pino). Set LOKI_URL on the API service to Grafana Loki internal URL. Worker stdout needs a shipper (e.g. Locomotive) with a service label matching mockcoach-worker.* or adjust queries.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -71,25 +71,25 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"error\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"production\", level=\"50\"}[1m]))",
           "legendFormat": "error",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"warn\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"production\", level=\"40\"}[1m]))",
           "legendFormat": "warn",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"info\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"production\", level=\"30\"}[1m]))",
           "legendFormat": "info",
           "refId": "C"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\", level=\"debug\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"production\", level=\"20\"}[1m]))",
           "legendFormat": "debug",
           "refId": "D"
         }
@@ -121,25 +121,25 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"error\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"staging\", level=\"50\"}[1m]))",
           "legendFormat": "error",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"warn\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"staging\", level=\"40\"}[1m]))",
           "legendFormat": "warn",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"info\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"staging\", level=\"30\"}[1m]))",
           "legendFormat": "info",
           "refId": "C"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\", level=\"debug\"}[1m]))",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"staging\", level=\"20\"}[1m]))",
           "legendFormat": "debug",
           "refId": "D"
         }
@@ -169,20 +169,20 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"production\"} |= \"error\" [1m]))",
-          "legendFormat": "prod errors",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"production\", level=~\"50|60\"} [1m]))",
+          "legendFormat": "prod errors (pino 50/60)",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-ai\", env=\"staging\"} |= \"error\" [1m]))",
-          "legendFormat": "staging errors",
+          "expr": "sum(count_over_time({service=\"mockcoach-api\", env=\"staging\", level=~\"50|60\"} [1m]))",
+          "legendFormat": "staging errors (pino 50/60)",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\"} |= \"error\" [1m]))",
-          "legendFormat": "worker errors",
+          "expr": "sum(count_over_time({service=~\"mockcoach-worker.*\", env=\"production\"} |~ \"(?i)(error|ALERT|💥)\" [1m]))",
+          "legendFormat": "worker error-ish lines",
           "refId": "C"
         }
       ]
@@ -214,7 +214,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "{app=\"mockcoach-ai\", env=\"production\"} |= \"error\"",
+          "expr": "{service=\"mockcoach-api\", env=\"production\", level=~\"50|60\"}",
           "legendFormat": "",
           "refId": "A"
         }
@@ -240,7 +240,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "{app=\"mockcoach-ai\", env=\"staging\"} |= \"error\"",
+          "expr": "{service=\"mockcoach-api\", env=\"staging\", level=~\"50|60\"}",
           "legendFormat": "",
           "refId": "A"
         }
@@ -273,7 +273,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "{app=\"mockcoach-ai\", env=\"production\"}",
+          "expr": "{service=\"mockcoach-api\", env=\"production\"}",
           "legendFormat": "",
           "refId": "A"
         }
@@ -299,7 +299,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "{app=\"mockcoach-ai\", env=\"staging\"}",
+          "expr": "{service=\"mockcoach-api\", env=\"staging\"}",
           "legendFormat": "",
           "refId": "A"
         }
@@ -332,25 +332,25 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
       "id": 8,
       "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
-      "title": "Worker Log Volume by Level",
+      "title": "Worker log lines/min (stdout; regex buckets)",
       "type": "timeseries",
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\", level=\"error\"}[1m]))",
-          "legendFormat": "error",
+          "expr": "sum(count_over_time({service=~\"mockcoach-worker.*\", env=\"production\"} |~ \"(?i)(error|ALERT|💥)\" [1m]))",
+          "legendFormat": "error-ish",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\", level=\"warn\"}[1m]))",
-          "legendFormat": "warn",
+          "expr": "sum(count_over_time({service=~\"mockcoach-worker.*\", env=\"production\"} |~ \"(?i)(warn|WARN|⚠|DEGRADED)\" [1m]))",
+          "legendFormat": "warn-ish",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "sum(count_over_time({app=\"mockcoach-worker\", env=\"production\", level=\"info\"}[1m]))",
-          "legendFormat": "info",
+          "expr": "sum(count_over_time({service=~\"mockcoach-worker.*\", env=\"production\"} !~ \"(?i)(error|ALERT|💥|warn|WARN|⚠|DEGRADED)\" [1m]))",
+          "legendFormat": "other lines",
           "refId": "C"
         }
       ]
@@ -375,7 +375,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "{app=\"mockcoach-worker\", env=\"production\"}",
+          "expr": "{service=~\"mockcoach-worker.*\", env=\"production\"}",
           "legendFormat": "",
           "refId": "A"
         }
@@ -401,7 +401,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "grafana_lokiq" },
-          "expr": "{app=\"mockcoach-worker\", env=\"production\"} |= \"error\"",
+          "expr": "{service=~\"mockcoach-worker.*\", env=\"production\"} |~ \"(?i)(error|ALERT|💥)\"",
           "legendFormat": "",
           "refId": "A"
         }
