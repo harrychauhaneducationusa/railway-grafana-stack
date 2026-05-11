@@ -26,11 +26,11 @@ scrape_configs:
 
   # mockcoach-ai — production API (GET /metrics on Express).
   # When mockcoach-ai has METRICS_BEARER_TOKEN set, set the same value on this
-  # Prometheus service; entrypoint.sh writes it to bearer_token_file before start.
+  # Prometheus service; entrypoint.sh writes /tmp/prometheus-secrets/mockcoach-ai-bearer at start.
   - job_name: 'mockcoach-ai'
     scheme: http
     metrics_path: /metrics
-    bearer_token_file: /prometheus/.secrets/mockcoach-ai-bearer
+    bearer_token_file: /tmp/prometheus-secrets/mockcoach-ai-bearer
     static_configs:
       # Replace 8080 with this service’s Railway PORT if different.
       - targets: ['mockcoach-ai.railway.internal:8080']
