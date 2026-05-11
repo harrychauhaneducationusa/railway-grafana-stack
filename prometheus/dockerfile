@@ -4,7 +4,7 @@ FROM prom/prometheus:${VERSION}
 
 COPY prom.yml /etc/prometheus/prom.yml
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Run via sh so we do not chmod (some builders, e.g. Railway, deny chmod on COPY layers).
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
 CMD ["--config.file=/etc/prometheus/prom.yml", "--storage.tsdb.path=/prometheus"]
