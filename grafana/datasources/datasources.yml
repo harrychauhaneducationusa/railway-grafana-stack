@@ -52,3 +52,20 @@ datasources:
     uid: grafana_testdata
     editable: true
     isDefault: false
+  - name: MockCoach Postgres
+    type: postgres
+    access: proxy
+    orgId: 1
+    uid: grafana_mockcoach_pg
+    url: $PGHOST:$PGPORT
+    user: $PGUSER
+    secureJsonData:
+      password: $PGPASSWORD
+    jsonData:
+      database: $PGDATABASE
+      sslmode: require
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    editable: true
+    isDefault: false

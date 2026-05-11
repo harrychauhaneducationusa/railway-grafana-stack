@@ -2,19 +2,41 @@
   "annotations": {
     "list": []
   },
-  "description": "Engagement & gamification. **Folder:** MockCoach.",
+  "description": "Referral lifecycle from **referrals** (Postgres). XP / learning panels remain TestData until instrumented in SQL. Reward constants: REFERRER_XP=200, REFERRED_XP=100, REFERRER_BONUS_REQUESTS=2, REFERRED_PREMIUM_DAYS (document in product).",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
   "links": [],
+  "liveNow": false,
   "meta": {
     "folderName": "MockCoach"
   },
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "mockcoach",
+    "business",
+    "postgres"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Engagement & Gamification",
+  "uid": "mockcoach-engagement",
+  "version": 1,
   "panels": [
     {
       "id": 1,
       "type": "text",
+      "title": "Referral rewards (product constants)",
       "gridPos": {
         "h": 3,
         "w": 24,
@@ -22,20 +44,18 @@
         "y": 0
       },
       "options": {
-        "content": "# PostHog placeholder\nThese panels use **TestData** so the dashboard imports cleanly. Map datasource **-- PostHog --** to TestData, or install a PostHog Grafana plugin and rebuild queries using the **event names** in each panel description.",
-        "mode": "markdown"
-      },
-      "title": "Setup",
-      "description": "PostHog datasource plugin is required for real analytics; see panel descriptions for event names."
+        "mode": "markdown",
+        "content": "| Constant | Value |\n|----------|-------|\n| REFERRER_XP | 200 |\n| REFERRED_XP | 100 |\n| REFERRER_BONUS_REQUESTS | 2 |\n| REFERRED_PREMIUM_DAYS | (set in app config) |\n\nStatuses in DB: pending, signed_up, verified, activated, rewarded, completed, expired."
+      }
     },
     {
       "id": 2,
-      "title": "Badges Earned per Day",
-      "description": "PostHog event: **badge_earned**.",
-      "type": "timeseries",
+      "type": "barchart",
+      "title": "Referral lifecycle funnel (counts in range)",
+      "description": "Ordered statuses from referrals.status.",
       "datasource": {
-        "type": "testdata",
-        "uid": "grafana_testdata"
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
       },
       "gridPos": {
         "h": 8,
@@ -44,133 +64,61 @@
         "y": 3
       },
       "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 30,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
+        "defaults": {},
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0
       },
       "targets": [
         {
           "datasource": {
-            "type": "testdata",
-            "uid": "grafana_testdata"
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
           },
-          "refId": "A",
-          "scenarioId": "random_walk",
-          "alias": "badge_earned"
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT status AS metric, COUNT(*)::float AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY status",
+          "refId": "A"
         }
       ]
     },
     {
       "id": 3,
-      "title": "XP Events per Day",
-      "description": "Instrument an **xp_awarded** (or similar) event in PostHog; placeholder until wired.",
-      "type": "timeseries",
+      "type": "stat",
+      "title": "Referral conversion % (rewarded / pending baseline)",
+      "description": "rewarded / NULLIF(all referrals in range,0). Adjust definition as needed.",
       "datasource": {
-        "type": "testdata",
-        "uid": "grafana_testdata"
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 5,
+        "w": 6,
         "x": 12,
         "y": 3
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
+          "unit": "percent",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "green",
+                "value": 15
               }
             ]
           }
@@ -178,143 +126,147 @@
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "testdata",
-            "uid": "grafana_testdata"
-          },
-          "refId": "A",
-          "scenarioId": "random_walk",
-          "alias": "xp (placeholder)"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Leaderboard Active Users",
-      "description": "Define weekly active users with leaderboard exposure in PostHog; placeholder stat.",
-      "type": "stat",
-      "datasource": {
-        "type": "testdata",
-        "uid": "grafana_testdata"
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 0,
-        "y": 11
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
-        }
+        },
+        "colorMode": "background",
+        "graphMode": "none"
       },
       "targets": [
         {
           "datasource": {
-            "type": "testdata",
-            "uid": "grafana_testdata"
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
           },
-          "refId": "A",
-          "scenarioId": "random_walk",
-          "alias": "WAU proxy"
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'rewarded') / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Expired referrals (range)",
+      "description": "status = expired within $__timeFilter(created_at).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n         AND status = 'expired'",
+          "refId": "A"
         }
       ]
     },
     {
       "id": 5,
-      "title": "Learning Clicks Trend",
-      "description": "PostHog event: **learning_resource_clicked**.",
-      "type": "timeseries",
+      "type": "table",
+      "title": "Top referrers",
+      "description": "By count of referrals created in range.",
       "datasource": {
-        "type": "testdata",
-        "uid": "grafana_testdata"
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
       },
       "gridPos": {
-        "h": 8,
-        "w": 16,
-        "x": 8,
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "referral_count",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT referrer_id::text, COUNT(*) AS referral_count\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY referrer_id\n       ORDER BY referral_count DESC\n       LIMIT 30",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Referrals per day",
+      "description": "Time series volume.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
         "y": 11
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+            "color": {
+              "mode": "palette-classic"
             },
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
               }
-            ]
+            }
           }
         },
         "overrides": []
@@ -333,20 +285,22 @@
       "targets": [
         {
           "datasource": {
-            "type": "testdata",
-            "uid": "grafana_testdata"
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
           },
-          "refId": "A",
-          "scenarioId": "random_walk",
-          "alias": "learning_resource_clicked"
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "refId": "A"
         }
       ]
     },
     {
-      "id": 6,
-      "title": "Referrals Sent (placeholder)",
-      "description": "No dedicated event in list — add **referral_sent** or map from marketing events in PostHog.",
+      "id": 7,
       "type": "timeseries",
+      "title": "Badges Earned per Day (placeholder)",
+      "description": "Wire badge_events table when available.",
       "datasource": {
         "type": "testdata",
         "uid": "grafana_testdata"
@@ -355,7 +309,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -363,44 +317,14 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 25,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
+            "drawStyle": "line",
+            "fillOpacity": 10,
             "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
             "showPoints": "never",
-            "spanNulls": false,
             "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdStyle": {
-              "mode": "off"
+              "mode": "none",
+              "group": "A"
             }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
           }
         },
         "overrides": []
@@ -424,24 +348,24 @@
           },
           "refId": "A",
           "scenarioId": "random_walk",
-          "alias": "referrals placeholder"
+          "alias": "badges"
         }
       ]
     },
     {
-      "id": 7,
-      "title": "Connection Activity (sent / accepted)",
-      "description": "Stacked-style comparison: **connection_request_sent** vs **connection_request_accepted** (add rejected when tracked).",
+      "id": 8,
       "type": "timeseries",
+      "title": "XP Events per Day (placeholder)",
+      "description": "Wire xp ledger when available.",
       "datasource": {
         "type": "testdata",
         "uid": "grafana_testdata"
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -449,44 +373,14 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 25,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
             "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
             "showPoints": "never",
-            "spanNulls": false,
             "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdStyle": {
-              "mode": "off"
+              "mode": "none",
+              "group": "A"
             }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
           }
         },
         "overrides": []
@@ -498,8 +392,8 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -510,35 +404,121 @@
           },
           "refId": "A",
           "scenarioId": "random_walk",
-          "alias": "sent"
+          "alias": "xp"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Learning clicks (placeholder)",
+      "description": "Use learning_resource analytics table if added.",
+      "datasource": {
+        "type": "testdata",
+        "uid": "grafana_testdata"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
         },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
         {
           "datasource": {
             "type": "testdata",
             "uid": "grafana_testdata"
           },
-          "refId": "B",
+          "refId": "A",
           "scenarioId": "random_walk",
-          "alias": "accepted"
+          "alias": "learning"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Connection activity (placeholder)",
+      "description": "Use marketplace connection tables when wired.",
+      "datasource": {
+        "type": "testdata",
+        "uid": "grafana_testdata"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "grafana_testdata"
+          },
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "connections"
         }
       ]
     }
-  ],
-  "refresh": "1h",
-  "schemaVersion": 39,
-  "tags": [
-    "mockcoach",
-    "business"
-  ],
-  "templating": {
-    "list": []
-  },
-  "time": {
-    "from": "now-30d",
-    "to": "now"
-  },
-  "timezone": "browser",
-  "title": "Engagement & Gamification",
-  "uid": "mockcoach-engagement",
-  "version": 1
+  ]
 }

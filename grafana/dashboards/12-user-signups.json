@@ -1,0 +1,420 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "**users** table analytics. Weekly cohort uses last_login vs signup week.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "meta": {
+    "folderName": "MockCoach"
+  },
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "mockcoach",
+    "business",
+    "postgres"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "User Signups & Registration Analytics",
+  "uid": "mockcoach-user-signups",
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total users (all time, not deleted)",
+      "description": "COUNT(*) WHERE deleted_at IS NULL.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::numeric AS value FROM users WHERE deleted_at IS NULL",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "Verified vs unverified",
+      "description": "Gauge value = % verified among non-deleted users.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 85
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE is_verified) / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM users WHERE deleted_at IS NULL",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Unverified users stuck >48h (alert)",
+      "description": "Created >48h ago, still not verified, not deleted. Red threshold on stat if >50 (set threshold in panel).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 25
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM users\n       WHERE deleted_at IS NULL\n         AND is_verified = false\n         AND created_at < NOW() - INTERVAL '48 hours'",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Daily signups (90d window)",
+      "description": "Uses $__timeFilter on created_at.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 16,
+        "x": 0,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            },
+            "drawStyle": "bars",
+            "fillOpacity": 25
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM users\n       WHERE deleted_at IS NULL AND $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "piechart",
+      "title": "Signup source (auth_provider)",
+      "description": "Pie of non-deleted users created in range.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(auth_provider, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM users\n       WHERE deleted_at IS NULL AND $__timeFilter(created_at)\n       GROUP BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Deleted accounts over time",
+      "description": "Count by day where deleted_at set.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', deleted_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM users\n       WHERE deleted_at IS NOT NULL AND $__timeFilter(deleted_at)\n       GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Weekly cohort: signups vs active in week+1",
+      "description": "signup_week cohort; active_w1 = users with last_login in the 7 days after their signup week ended.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\n         SELECT id,\n                date_trunc('week', created_at) AS signup_week,\n                created_at,\n                last_login\n         FROM users\n         WHERE deleted_at IS NULL\n           AND created_at >= NOW() - INTERVAL '365 days'\n       )\n       SELECT signup_week::date AS cohort_week,\n              COUNT(*) AS signups,\n              COUNT(*) FILTER (\n                WHERE last_login IS NOT NULL\n                  AND last_login >= signup_week + INTERVAL '7 days'\n                  AND last_login < signup_week + INTERVAL '14 days'\n              ) AS active_week_after_signup\n       FROM base\n       GROUP BY signup_week\n       ORDER BY signup_week DESC\n       LIMIT 26",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

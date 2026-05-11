@@ -1,0 +1,486 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Uses **ai_usage_log.cost_estimate_usd** (column **model_used**). Resume uploads: **resume_ai_usage**. Voice: **voice_coach_usage**. Budget % uses calendar-month sum vs **monthly_budget** variable.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "meta": {
+    "folderName": "MockCoach"
+  },
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "mockcoach",
+    "business",
+    "postgres"
+  ],
+  "templating": {
+    "list": {
+      "list": [
+        {
+          "name": "monthly_budget",
+          "label": "Monthly Budget (USD)",
+          "type": "textbox",
+          "current": {
+            "selected": true,
+            "text": "500",
+            "value": "500"
+          },
+          "hide": 0,
+          "options": [
+            {
+              "selected": true,
+              "text": "500",
+              "value": "500"
+            },
+            {
+              "selected": false,
+              "text": "1000",
+              "value": "1000"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "time": {
+    "from": "now-90d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "OpenAI Cost Analysis",
+  "uid": "mockcoach-openai-cost",
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Pricing reference",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "Spend is read from **cost_estimate_usd**. Legacy token rates (gpt-4o / gpt-4o-mini) are not recomputed here. Rewards constants for referrals elsewhere: REFERRER_XP=200, REFERRED_XP=100, REFERRER_BONUS_REQUESTS=2, REFERRED_PREMIUM_DAYS (configure in product)."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Cumulative AI spend (all time)",
+      "description": "SUM(cost_estimate_usd) from ai_usage_log.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(cost_estimate_usd), 0)::numeric AS value FROM ai_usage_log",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "AI cost per distinct user (all time)",
+      "description": "SUM(cost) / COUNT(DISTINCT user_id) — users with NULL user_id excluded from denominator adjustment via NULLIF.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n         CASE WHEN COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL) = 0 THEN 0\n         ELSE COALESCE(SUM(cost_estimate_usd),0) / COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL)\n         END::numeric AS value\n       FROM ai_usage_log",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "gauge",
+      "title": "% of monthly budget used (current month)",
+      "description": "Month-to-date SUM(cost_estimate_usd) / **monthly_budget** textbox (default 500).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT LEAST(100, ROUND(100.0 * COALESCE(SUM(cost_estimate_usd),0) / NULLIF(CAST('${monthly_budget}' AS NUMERIC), 0), 2))::numeric AS value\n       FROM ai_usage_log\n       WHERE created_at >= date_trunc('month', NOW())\n         AND created_at < date_trunc('month', NOW()) + INTERVAL '1 month'",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Daily AI spend (USD)",
+      "description": "Grouped sum of cost_estimate_usd.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              SUM(cost_estimate_usd)::double precision AS value\n       FROM ai_usage_log\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "piechart",
+      "title": "Spend by model_used (pie)",
+      "description": "Share of estimated cost by model_used.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(model_used, 'unknown') AS metric,\n              SUM(cost_estimate_usd)::float AS value\n       FROM ai_usage_log\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Resume AI uploads by month (resume_ai_usage)",
+      "description": "Sum of ai_resume_uploads grouped by month_year.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT month_year AS metric,\n              SUM(ai_resume_uploads)::float AS value\n       FROM resume_ai_usage\n       GROUP BY month_year\n       ORDER BY month_year DESC\n       LIMIT 24",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Voice Coach sessions per day",
+      "description": "COUNT from voice_coach_usage.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            },
+            "drawStyle": "bars",
+            "fillOpacity": 30
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM voice_coach_usage\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Voice Coach sessions: hour × weekday (UTC)",
+      "description": "Matrix for peak analysis (0=Sunday). Color in table; upgrade to heatmap panel + transform if desired.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "sessions",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n         EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC')::int AS dow_utc,\n         EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')::int AS hour_utc,\n         COUNT(*)::int AS sessions\n       FROM voice_coach_usage\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1, 2\n       ORDER BY 1, 2",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}
