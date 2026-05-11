@@ -9,9 +9,12 @@ umask 077
 printf '%s' "${METRICS_BEARER_TOKEN:-}" >"$SECRETS_DIR/mockcoach-ai-bearer"
 # Railway health checks hit $PORT; Prometheus defaults to 9090 → "service unavailable" if they differ.
 LISTEN_PORT="${PORT:-9090}"
+# Self-scrape job uses localhost:9090 in prom.yml; align with LISTEN_PORT (writable copy; prom.yml is root-owned).
+RUNTIME_CFG=/tmp/prom.runtime.yml
+sed -e "s/localhost:9090/localhost:${LISTEN_PORT}/g" /etc/prometheus/prom.yml >"$RUNTIME_CFG"
 # Clear Custom Start Command in Railway so this entrypoint runs (bearer file + flags).
 exec /bin/prometheus \
-  --config.file=/etc/prometheus/prom.yml \
+  --config.file="$RUNTIME_CFG" \
   --storage.tsdb.path=/prometheus \
   --web.listen-address="0.0.0.0:${LISTEN_PORT}" \
   --web.enable-remote-write-receiver
