@@ -1,0 +1,1241 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Postgres: **job_postings**, **job_applications** (application_state enum + status), **application_events**, **users**, **company_profiles**. Guest apply: **candidate_id IS NULL**. Requires MockCoach Postgres on Grafana.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "meta": {
+    "folderName": "MockCoach"
+  },
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "mockcoach",
+    "business",
+    "postgres",
+    "ats"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "ATS Recruiter Activity & Hiring Funnel",
+  "uid": "mockcoach-ats-recruiter-funnel",
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Notes",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "**application_state** funnel: DRAFT → PENDING_VERIFICATION → VERIFIED → SUBMITTED → SCORING_PENDING → SCORED → INTERVIEW_PENDING → INTERVIEWED → DECISION_MADE. **status** (HR): applied, reviewed, shortlisted, interviewing, offered, rejected, withdrawn. Views→apply % uses **SUM(applications_count) / SUM(views_count)** on `job_postings` (same aggregate scope as the two stats above it)."
+      }
+    },
+    {
+      "id": 2,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## 1. Recruiter activity"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Active recruiters (30d)",
+      "description": "DISTINCT **posted_by** on job_postings created in the last 30 days.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT posted_by)::numeric AS value\n       FROM public.job_postings\n       WHERE created_at >= NOW() - INTERVAL '30 days'",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active jobs with zero applications",
+      "description": "**Alert:** count of active postings where applications_count = 0.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.job_postings\n       WHERE LOWER(TRIM(status)) = 'active' AND COALESCE(applications_count, 0) = 0",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "piechart",
+      "title": "Job postings by status",
+      "description": "Distribution of **status** (draft / active / paused / closed).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 9,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(status, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM public.job_postings\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "New jobs per day",
+      "description": "COUNT(job_postings) by day (**created_at**).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 7,
+        "x": 17,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            },
+            "drawStyle": "bars",
+            "fillOpacity": 35
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.job_postings\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Jobs by role_type",
+      "description": "Active + all statuses in range — volume by **role_type**.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(role_type, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM public.job_postings\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1\n       ORDER BY value DESC",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Top 10 recruiters (by jobs in range)",
+      "description": "Join **users** for name and email; counts from **job_postings** in time range.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "jobs_posted",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n         u.id::text AS user_id,\n         COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))), ''), u.email) AS display_name,\n         u.email,\n         cp.name AS company_name,\n         COUNT(jp.id)::int AS jobs_posted,\n         SUM(COALESCE(jp.applications_count, 0))::bigint AS applications_on_jobs\n       FROM public.job_postings jp\n       JOIN public.users u ON u.id = jp.posted_by\n       LEFT JOIN public.company_profiles cp ON cp.id = jp.company_id\n       WHERE $__timeFilter(jp.created_at)\n       GROUP BY u.id, u.email, u.first_name, u.last_name, cp.name\n       ORDER BY jobs_posted DESC\n       LIMIT 10",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## 2. Public URL funnel"
+      }
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Total job page views",
+      "description": "**SUM(views_count)** over all job_postings (lifetime counters on rows).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 22
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(views_count), 0)::numeric AS value FROM public.job_postings",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "gauge",
+      "title": "Views → application conversion %",
+      "description": "**SUM(applications_count) / SUM(views_count) × 100** on job_postings.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 22
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT LEAST(100, ROUND(100.0 * SUM(COALESCE(applications_count, 0)) / NULLIF(SUM(COALESCE(views_count, 0)), 0), 2))::numeric AS value\n       FROM public.job_postings",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "gauge",
+      "title": "Resume upload rate %",
+      "description": "**resume_storage_key IS NOT NULL** / all applications in range.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 22
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "green",
+                "value": 60
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE resume_storage_key IS NOT NULL) / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "gauge",
+      "title": "Email OTP verification rate % (guests)",
+      "description": "**email_verified_at IS NOT NULL** among rows with **candidate_id IS NULL**.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 15,
+        "y": 22
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 40
+              },
+              {
+                "color": "green",
+                "value": 75
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE email_verified_at IS NOT NULL) / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at) AND candidate_id IS NULL",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "barchart",
+      "title": "Application_state funnel (ordered)",
+      "description": "Counts by **application_state** enum in funnel order.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT application_state::text AS metric,\n              COUNT(*)::float AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY application_state\n       ORDER BY CASE application_state::text\n         WHEN 'DRAFT' THEN 1\n         WHEN 'PENDING_VERIFICATION' THEN 2\n         WHEN 'VERIFIED' THEN 3\n         WHEN 'SUBMITTED' THEN 4\n         WHEN 'SCORING_PENDING' THEN 5\n         WHEN 'SCORED' THEN 6\n         WHEN 'INTERVIEW_PENDING' THEN 7\n         WHEN 'INTERVIEWED' THEN 8\n         WHEN 'DECISION_MADE' THEN 9\n         ELSE 99\n       END",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Applications per day",
+      "description": "Volume from **job_applications** in the selected range.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            },
+            "drawStyle": "bars",
+            "fillOpacity": 30
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## 3. Guest → platform conversion"
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Guest applications (candidate_id NULL)",
+      "description": "Total in selected time range.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at) AND candidate_id IS NULL",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Registered applications",
+      "description": "**candidate_id IS NOT NULL** in range.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at) AND candidate_id IS NOT NULL",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "Guests who later signed up",
+      "description": "Match **lower(users.email) = lower(candidate_email)**; user **created_at** after application **created_at**.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.job_applications ja\n       JOIN public.users u ON lower(u.email) = lower(ja.candidate_email)\n       WHERE ja.candidate_id IS NULL\n         AND u.created_at > ja.created_at\n         AND $__timeFilter(ja.created_at)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "type": "gauge",
+      "title": "Platform signup conversion from guest apply %",
+      "description": "Guests who later signed up ÷ total guest applications in range × 100.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 15,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0.5
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              }
+            ]
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH g AS (\n         SELECT COUNT(*)::numeric AS guest_total\n         FROM public.job_applications\n         WHERE $__timeFilter(created_at) AND candidate_id IS NULL\n       ),\n       c AS (\n         SELECT COUNT(*)::numeric AS converted\n         FROM public.job_applications ja\n         JOIN public.users u ON lower(u.email) = lower(ja.candidate_email)\n         WHERE ja.candidate_id IS NULL\n           AND u.created_at > ja.created_at\n           AND $__timeFilter(ja.created_at)\n       )\n       SELECT ROUND(100.0 * c.converted / NULLIF(g.guest_total, 0), 2)::numeric AS value FROM g, c",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Avg hours: application → signup",
+      "description": "Among guest rows that later matched a user with **users.created_at > ja.created_at**.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 43
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(AVG(EXTRACT(EPOCH FROM (u.created_at::timestamptz - ja.created_at)) / 3600.0)::numeric, 2) AS value\n       FROM public.job_applications ja\n       JOIN public.users u ON lower(u.email) = lower(ja.candidate_email)\n       WHERE ja.candidate_id IS NULL\n         AND u.created_at > ja.created_at\n         AND $__timeFilter(ja.created_at)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "piechart",
+      "title": "Guest vs registered (share in range)",
+      "description": "Pie over **job_applications** in the dashboard range.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 47
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT CASE WHEN candidate_id IS NULL THEN 'Guest' ELSE 'Registered' END AS metric,\n              COUNT(*)::float AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "Guest vs registered applications per day",
+      "description": "Two series by day (stacked bars).",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 47
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never",
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            },
+            "drawStyle": "bars",
+            "fillOpacity": 55,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              CASE WHEN candidate_id IS NULL THEN 'Guest' ELSE 'Registered' END AS metric,\n              COUNT(*)::double precision AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1, 2\n       ORDER BY 1, 2",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 55
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## 4. Outcomes & AI screening"
+      }
+    },
+    {
+      "id": 25,
+      "type": "piechart",
+      "title": "Application status (HR pipeline)",
+      "description": "**status**: applied, reviewed, shortlisted, interviewing, offered, rejected, withdrawn.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 56
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(status, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "type": "barchart",
+      "title": "AI screening score (final_score) distribution",
+      "description": "Histogram buckets; null scores excluded.",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 56
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT metric, value\n       FROM (\n         SELECT\n           CASE\n             WHEN final_score < 20 THEN '0–19'\n             WHEN final_score < 40 THEN '20–39'\n             WHEN final_score < 60 THEN '40–59'\n             WHEN final_score < 80 THEN '60–79'\n             ELSE '80–100'\n           END AS metric,\n           COUNT(*)::float AS value,\n           MIN(\n             CASE\n               WHEN final_score < 20 THEN 1\n               WHEN final_score < 40 THEN 2\n               WHEN final_score < 60 THEN 3\n               WHEN final_score < 80 THEN 4\n               ELSE 5\n             END\n           ) AS ord\n         FROM public.job_applications\n         WHERE $__timeFilter(created_at) AND final_score IS NOT NULL\n         GROUP BY CASE\n           WHEN final_score < 20 THEN '0–19'\n           WHEN final_score < 40 THEN '20–39'\n           WHEN final_score < 60 THEN '40–59'\n           WHEN final_score < 80 THEN '60–79'\n           ELSE '80–100'\n         END\n       ) buckets\n       ORDER BY ord",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "type": "barchart",
+      "title": "Decision made: counts by decision_override",
+      "description": "Rows in **DECISION_MADE** grouped by **decision_override** (NULL shown as \"(none)\").",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana_mockcoach_pg"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 56
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana_mockcoach_pg"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(NULLIF(TRIM(decision_override), ''), '(none)') AS metric,\n              COUNT(*)::float AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n         AND application_state = 'DECISION_MADE'::public.application_state_enum\n       GROUP BY 1\n       ORDER BY value DESC",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

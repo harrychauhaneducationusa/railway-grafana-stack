@@ -429,91 +429,406 @@ function dash10() {
 }
 
 function dash11() {
-  const d = baseDash('ATS Public Apply & Hiring Funnel', 'mockcoach-ats-hiring-funnel', ['mockcoach', 'business', 'postgres'], {
+  const d = baseDash('ATS Recruiter Activity & Hiring Funnel', 'mockcoach-ats-recruiter-funnel', ['mockcoach', 'business', 'postgres', 'ats'], {
     description:
-      '**job_applications** statuses in schema: applied, reviewed, shortlisted, interviewing, offered, rejected, withdrawn. **candidate_id** is NOT NULL in baseline; guest apply may use placeholder user — adjust SQL if you add nullable guest keys. **Public apply** path `/apply/:jobId` is frontend routing.',
-    time: { from: 'now-180d', to: 'now' },
+      'Postgres: **job_postings**, **job_applications** (application_state enum + status), **application_events**, **users**, **company_profiles**. Guest apply: **candidate_id IS NULL**. Requires MockCoach Postgres on Grafana.',
+    time: { from: 'now-30d', to: 'now' },
   });
   d.panels = [
     {
       id: 1,
       type: 'text',
+      title: 'Notes',
       gridPos: { h: 3, w: 24, x: 0, y: 0 },
-      title: 'Funnel mapping',
       options: {
         mode: 'markdown',
         content:
-          'Funnel uses actual DB statuses: **applied** (entry) → reviewed → shortlisted → interviewing → offered → **rejected** / withdrawn. There is no **hired** status in `job_applications` CHECK constraint — add a panel to **job_postings** or HR table when available.',
+          '**application_state** funnel: DRAFT → PENDING_VERIFICATION → VERIFIED → SUBMITTED → SCORING_PENDING → SCORED → INTERVIEW_PENDING → INTERVIEWED → DECISION_MADE. **status** (HR): applied, reviewed, shortlisted, interviewing, offered, rejected, withdrawn. Views→apply % uses **SUM(applications_count) / SUM(views_count)** on `job_postings` (same aggregate scope as the two stats above it).',
       },
     },
-    pgPanel(
-      2,
-      'Applications: guest vs registered (schema-aware)',
-      'If candidate_id becomes nullable, guest rows appear in guest_count.',
-      'barchart',
-      { h: 7, w: 16, x: 0, y: 3 },
-      `SELECT
-         CASE WHEN candidate_id IS NULL THEN 'guest' ELSE 'registered' END AS metric,
-         COUNT(*)::float AS value
-       FROM public.job_applications
-       WHERE $__timeFilter(created_at)
-       GROUP BY 1`,
-      'table',
-      { options: { orientation: 'horizontal', showValue: 'auto', stacking: 'none', xTickLabelRotation: 0 } }
-    ),
+    { id: 2, type: 'text', title: '', gridPos: { h: 1, w: 24, x: 0, y: 3 }, options: { mode: 'markdown', content: '## 1. Recruiter activity' } },
     pgPanel(
       3,
-      'Open job postings (active)',
-      'job_postings with status = active.',
+      'Active recruiters (30d)',
+      'DISTINCT **posted_by** on job_postings created in the last 30 days.',
       'stat',
-      { h: 7, w: 8, x: 16, y: 3 },
-      `SELECT COUNT(*)::numeric AS value FROM public.job_postings WHERE LOWER(status) = 'active'`,
+      { h: 4, w: 4, x: 0, y: 4 },
+      `SELECT COUNT(DISTINCT posted_by)::numeric AS value
+       FROM public.job_postings
+       WHERE created_at >= NOW() - INTERVAL '30 days'`,
       'table',
-      { options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
+      { unit: 'short', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
     ),
     pgPanel(
       4,
-      'Applications per week',
-      'Volume trend.',
-      'timeseries',
-      { h: 8, w: 24, x: 0, y: 10 },
-      `SELECT date_trunc('week', created_at)::timestamp AS time,
-              COUNT(*)::double precision AS value
-       FROM public.job_applications
-       WHERE $__timeFilter(created_at)
-       GROUP BY 1 ORDER BY 1`,
-      'time_series',
-      { custom: tsFill, options: { legend: { displayMode: 'list', placement: 'bottom', showLegend: true }, tooltip: { mode: 'single', sort: 'none' } } }
+      'Active jobs with zero applications',
+      '**Alert:** count of active postings where applications_count = 0.',
+      'stat',
+      { h: 4, w: 5, x: 4, y: 4 },
+      `SELECT COUNT(*)::numeric AS value
+       FROM public.job_postings
+       WHERE LOWER(TRIM(status)) = 'active' AND COALESCE(applications_count, 0) = 0`,
+      'table',
+      {
+        unit: 'short',
+        thresholds: { mode: 'absolute', steps: [{ color: 'green', value: null }, { color: 'orange', value: 1 }, { color: 'red', value: 5 }] },
+        options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'background', graphMode: 'none' },
+      }
     ),
     pgPanel(
       5,
-      'Funnel counts by status',
-      'Single snapshot in selected range.',
-      'barchart',
-      { h: 8, w: 12, x: 0, y: 18 },
-      `SELECT status AS metric, COUNT(*)::float AS value
-       FROM public.job_applications
+      'Job postings by status',
+      'Distribution of **status** (draft / active / paused / closed).',
+      'piechart',
+      { h: 9, w: 8, x: 9, y: 4 },
+      `SELECT COALESCE(status, 'unknown') AS metric, COUNT(*)::float AS value
+       FROM public.job_postings
        WHERE $__timeFilter(created_at)
-       GROUP BY status
+       GROUP BY 1`,
+      'table',
+      { options: { legend: { displayMode: 'table', placement: 'right', showLegend: true, values: ['value'] }, pieType: 'donut', tooltip: { mode: 'single', sort: 'none' } } }
+    ),
+    pgPanel(
+      6,
+      'New jobs per day',
+      'COUNT(job_postings) by day (**created_at**).',
+      'timeseries',
+      { h: 9, w: 7, x: 17, y: 4 },
+      `SELECT date_trunc('day', created_at)::timestamp AS time,
+              COUNT(*)::double precision AS value
+       FROM public.job_postings
+       WHERE $__timeFilter(created_at)
+       GROUP BY 1 ORDER BY 1`,
+      'time_series',
+      { custom: { ...tsFill, drawStyle: 'bars', fillOpacity: 35 }, options: { legend: { displayMode: 'list', placement: 'bottom', showLegend: true }, tooltip: { mode: 'single', sort: 'none' } } }
+    ),
+    pgPanel(
+      7,
+      'Jobs by role_type',
+      'Active + all statuses in range — volume by **role_type**.',
+      'barchart',
+      { h: 8, w: 12, x: 0, y: 13 },
+      `SELECT COALESCE(role_type, 'unknown') AS metric, COUNT(*)::float AS value
+       FROM public.job_postings
+       WHERE $__timeFilter(created_at)
+       GROUP BY 1
        ORDER BY value DESC`,
       'table',
       { options: { orientation: 'horizontal', showValue: 'auto', stacking: 'none', xTickLabelRotation: 0 } }
     ),
     pgPanel(
-      6,
-      'Top jobs by application volume',
-      'Join to job_postings title.',
+      8,
+      'Top 10 recruiters (by jobs in range)',
+      'Join **users** for name and email; counts from **job_postings** in time range.',
       'table',
-      { h: 8, w: 12, x: 12, y: 18 },
-      `SELECT jp.title, jp.id::text AS job_id, COUNT(ja.id) AS applications
+      { h: 8, w: 12, x: 12, y: 13 },
+      `SELECT
+         u.id::text AS user_id,
+         COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))), ''), u.email) AS display_name,
+         u.email,
+         cp.name AS company_name,
+         COUNT(jp.id)::int AS jobs_posted,
+         SUM(COALESCE(jp.applications_count, 0))::bigint AS applications_on_jobs
+       FROM public.job_postings jp
+       JOIN public.users u ON u.id = jp.posted_by
+       LEFT JOIN public.company_profiles cp ON cp.id = jp.company_id
+       WHERE $__timeFilter(jp.created_at)
+       GROUP BY u.id, u.email, u.first_name, u.last_name, cp.name
+       ORDER BY jobs_posted DESC
+       LIMIT 10`,
+      'table',
+      { options: { showHeader: true, sortBy: [{ displayName: 'jobs_posted', desc: true }] } }
+    ),
+    { id: 9, type: 'text', title: '', gridPos: { h: 1, w: 24, x: 0, y: 21 }, options: { mode: 'markdown', content: '## 2. Public URL funnel' } },
+    pgPanel(
+      10,
+      'Total job page views',
+      '**SUM(views_count)** over all job_postings (lifetime counters on rows).',
+      'stat',
+      { h: 4, w: 5, x: 0, y: 22 },
+      `SELECT COALESCE(SUM(views_count), 0)::numeric AS value FROM public.job_postings`,
+      'table',
+      { unit: 'short', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
+    ),
+    pgPanel(
+      11,
+      'Views → application conversion %',
+      '**SUM(applications_count) / SUM(views_count) × 100** on job_postings.',
+      'gauge',
+      { h: 4, w: 5, x: 5, y: 22 },
+      `SELECT LEAST(100, ROUND(100.0 * SUM(COALESCE(applications_count, 0)) / NULLIF(SUM(COALESCE(views_count, 0)), 0), 2))::numeric AS value
+       FROM public.job_postings`,
+      'table',
+      {
+        unit: 'percent',
+        min: 0,
+        max: 100,
+        thresholds: { mode: 'absolute', steps: [{ color: 'blue', value: null }, { color: 'green', value: 1 }, { color: 'yellow', value: 10 }] },
+        options: { showThresholdLabels: true, showThresholdMarkers: true, reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false } },
+      }
+    ),
+    pgPanel(
+      12,
+      'Resume upload rate %',
+      '**resume_storage_key IS NOT NULL** / all applications in range.',
+      'gauge',
+      { h: 4, w: 5, x: 10, y: 22 },
+      `SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE resume_storage_key IS NOT NULL) / NULLIF(COUNT(*), 0), 2)::numeric AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at)`,
+      'table',
+      {
+        unit: 'percent',
+        min: 0,
+        max: 100,
+        thresholds: { mode: 'absolute', steps: [{ color: 'red', value: null }, { color: 'yellow', value: 30 }, { color: 'green', value: 60 }] },
+        options: { showThresholdLabels: true, showThresholdMarkers: true, reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false } },
+      }
+    ),
+    pgPanel(
+      13,
+      'Email OTP verification rate % (guests)',
+      '**email_verified_at IS NOT NULL** among rows with **candidate_id IS NULL**.',
+      'gauge',
+      { h: 4, w: 5, x: 15, y: 22 },
+      `SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE email_verified_at IS NOT NULL) / NULLIF(COUNT(*), 0), 2)::numeric AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at) AND candidate_id IS NULL`,
+      'table',
+      {
+        unit: 'percent',
+        min: 0,
+        max: 100,
+        thresholds: { mode: 'absolute', steps: [{ color: 'red', value: null }, { color: 'yellow', value: 40 }, { color: 'green', value: 75 }] },
+        options: { showThresholdLabels: true, showThresholdMarkers: true, reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false } },
+      }
+    ),
+    pgPanel(
+      14,
+      'Application_state funnel (ordered)',
+      'Counts by **application_state** enum in funnel order.',
+      'barchart',
+      { h: 9, w: 24, x: 0, y: 26 },
+      `SELECT application_state::text AS metric,
+              COUNT(*)::float AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at)
+       GROUP BY application_state
+       ORDER BY CASE application_state::text
+         WHEN 'DRAFT' THEN 1
+         WHEN 'PENDING_VERIFICATION' THEN 2
+         WHEN 'VERIFIED' THEN 3
+         WHEN 'SUBMITTED' THEN 4
+         WHEN 'SCORING_PENDING' THEN 5
+         WHEN 'SCORED' THEN 6
+         WHEN 'INTERVIEW_PENDING' THEN 7
+         WHEN 'INTERVIEWED' THEN 8
+         WHEN 'DECISION_MADE' THEN 9
+         ELSE 99
+       END`,
+      'table',
+      { options: { orientation: 'horizontal', showValue: 'auto', stacking: 'none', xTickLabelRotation: 0 } }
+    ),
+    pgPanel(
+      15,
+      'Applications per day',
+      'Volume from **job_applications** in the selected range.',
+      'timeseries',
+      { h: 7, w: 24, x: 0, y: 35 },
+      `SELECT date_trunc('day', created_at)::timestamp AS time,
+              COUNT(*)::double precision AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at)
+       GROUP BY 1 ORDER BY 1`,
+      'time_series',
+      { custom: { ...tsFill, drawStyle: 'bars', fillOpacity: 30 }, options: { legend: { displayMode: 'list', placement: 'bottom', showLegend: true }, tooltip: { mode: 'single', sort: 'none' } } }
+    ),
+    { id: 16, type: 'text', title: '', gridPos: { h: 1, w: 24, x: 0, y: 42 }, options: { mode: 'markdown', content: '## 3. Guest → platform conversion' } },
+    pgPanel(
+      17,
+      'Guest applications (candidate_id NULL)',
+      'Total in selected time range.',
+      'stat',
+      { h: 4, w: 5, x: 0, y: 43 },
+      `SELECT COUNT(*)::numeric AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at) AND candidate_id IS NULL`,
+      'table',
+      { unit: 'short', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
+    ),
+    pgPanel(
+      18,
+      'Registered applications',
+      '**candidate_id IS NOT NULL** in range.',
+      'stat',
+      { h: 4, w: 5, x: 5, y: 43 },
+      `SELECT COUNT(*)::numeric AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at) AND candidate_id IS NOT NULL`,
+      'table',
+      { unit: 'short', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
+    ),
+    pgPanel(
+      19,
+      'Guests who later signed up',
+      'Match **lower(users.email) = lower(candidate_email)**; user **created_at** after application **created_at**.',
+      'stat',
+      { h: 4, w: 5, x: 10, y: 43 },
+      `SELECT COUNT(*)::numeric AS value
        FROM public.job_applications ja
-       JOIN public.job_postings jp ON jp.id = ja.job_id
-       WHERE $__timeFilter(ja.created_at)
-       GROUP BY jp.id, jp.title
-       ORDER BY applications DESC
-       LIMIT 25`,
+       JOIN public.users u ON lower(u.email) = lower(ja.candidate_email)
+       WHERE ja.candidate_id IS NULL
+         AND u.created_at > ja.created_at
+         AND $__timeFilter(ja.created_at)`,
       'table',
-      { options: { showHeader: true, sortBy: [] } }
+      { unit: 'short', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
+    ),
+    pgPanel(
+      20,
+      'Platform signup conversion from guest apply %',
+      'Guests who later signed up ÷ total guest applications in range × 100.',
+      'gauge',
+      { h: 4, w: 5, x: 15, y: 43 },
+      `WITH g AS (
+         SELECT COUNT(*)::numeric AS guest_total
+         FROM public.job_applications
+         WHERE $__timeFilter(created_at) AND candidate_id IS NULL
+       ),
+       c AS (
+         SELECT COUNT(*)::numeric AS converted
+         FROM public.job_applications ja
+         JOIN public.users u ON lower(u.email) = lower(ja.candidate_email)
+         WHERE ja.candidate_id IS NULL
+           AND u.created_at > ja.created_at
+           AND $__timeFilter(ja.created_at)
+       )
+       SELECT ROUND(100.0 * c.converted / NULLIF(g.guest_total, 0), 2)::numeric AS value FROM g, c`,
+      'table',
+      {
+        unit: 'percent',
+        min: 0,
+        max: 100,
+        thresholds: { mode: 'absolute', steps: [{ color: 'blue', value: null }, { color: 'green', value: 0.5 }, { color: 'yellow', value: 5 }] },
+        options: { showThresholdLabels: true, showThresholdMarkers: true, reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false } },
+      }
+    ),
+    pgPanel(
+      21,
+      'Avg hours: application → signup',
+      'Among guest rows that later matched a user with **users.created_at > ja.created_at**.',
+      'stat',
+      { h: 4, w: 4, x: 20, y: 43 },
+      `SELECT ROUND(AVG(EXTRACT(EPOCH FROM (u.created_at::timestamptz - ja.created_at)) / 3600.0)::numeric, 2) AS value
+       FROM public.job_applications ja
+       JOIN public.users u ON lower(u.email) = lower(ja.candidate_email)
+       WHERE ja.candidate_id IS NULL
+         AND u.created_at > ja.created_at
+         AND $__timeFilter(ja.created_at)`,
+      'table',
+      { unit: 'h', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
+    ),
+    pgPanel(
+      22,
+      'Guest vs registered (share in range)',
+      'Pie over **job_applications** in the dashboard range.',
+      'piechart',
+      { h: 8, w: 8, x: 0, y: 47 },
+      `SELECT CASE WHEN candidate_id IS NULL THEN 'Guest' ELSE 'Registered' END AS metric,
+              COUNT(*)::float AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at)
+       GROUP BY 1`,
+      'table',
+      { options: { legend: { displayMode: 'list', placement: 'bottom', showLegend: true }, pieType: 'donut', tooltip: { mode: 'single', sort: 'none' } } }
+    ),
+    pgPanel(
+      23,
+      'Guest vs registered applications per day',
+      'Two series by day (stacked bars).',
+      'timeseries',
+      { h: 8, w: 16, x: 8, y: 47 },
+      `SELECT date_trunc('day', created_at)::timestamp AS time,
+              CASE WHEN candidate_id IS NULL THEN 'Guest' ELSE 'Registered' END AS metric,
+              COUNT(*)::double precision AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at)
+       GROUP BY 1, 2
+       ORDER BY 1, 2`,
+      'time_series',
+      {
+        custom: { ...tsFill, drawStyle: 'bars', fillOpacity: 55, stacking: { mode: 'normal', group: 'A' } },
+        options: { legend: { displayMode: 'list', placement: 'bottom', showLegend: true }, tooltip: { mode: 'multi', sort: 'desc' } },
+      }
+    ),
+    { id: 24, type: 'text', title: '', gridPos: { h: 1, w: 24, x: 0, y: 55 }, options: { mode: 'markdown', content: '## 4. Outcomes & AI screening' } },
+    pgPanel(
+      25,
+      'Application status (HR pipeline)',
+      '**status**: applied, reviewed, shortlisted, interviewing, offered, rejected, withdrawn.',
+      'piechart',
+      { h: 9, w: 8, x: 0, y: 56 },
+      `SELECT COALESCE(status, 'unknown') AS metric, COUNT(*)::float AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at)
+       GROUP BY 1`,
+      'table',
+      { options: { legend: { displayMode: 'table', placement: 'right', showLegend: true, values: ['value'] }, pieType: 'donut', tooltip: { mode: 'single', sort: 'none' } } }
+    ),
+    pgPanel(
+      26,
+      'AI screening score (final_score) distribution',
+      'Histogram buckets; null scores excluded.',
+      'barchart',
+      { h: 9, w: 8, x: 8, y: 56 },
+      `SELECT metric, value
+       FROM (
+         SELECT
+           CASE
+             WHEN final_score < 20 THEN '0–19'
+             WHEN final_score < 40 THEN '20–39'
+             WHEN final_score < 60 THEN '40–59'
+             WHEN final_score < 80 THEN '60–79'
+             ELSE '80–100'
+           END AS metric,
+           COUNT(*)::float AS value,
+           MIN(
+             CASE
+               WHEN final_score < 20 THEN 1
+               WHEN final_score < 40 THEN 2
+               WHEN final_score < 60 THEN 3
+               WHEN final_score < 80 THEN 4
+               ELSE 5
+             END
+           ) AS ord
+         FROM public.job_applications
+         WHERE $__timeFilter(created_at) AND final_score IS NOT NULL
+         GROUP BY CASE
+           WHEN final_score < 20 THEN '0–19'
+           WHEN final_score < 40 THEN '20–39'
+           WHEN final_score < 60 THEN '40–59'
+           WHEN final_score < 80 THEN '60–79'
+           ELSE '80–100'
+         END
+       ) buckets
+       ORDER BY ord`,
+      'table',
+      { options: { orientation: 'vertical', showValue: 'auto', stacking: 'none', xTickLabelRotation: 0 } }
+    ),
+    pgPanel(
+      27,
+      'Decision made: counts by decision_override',
+      'Rows in **DECISION_MADE** grouped by **decision_override** (NULL shown as "(none)").',
+      'barchart',
+      { h: 9, w: 8, x: 16, y: 56 },
+      `SELECT COALESCE(NULLIF(TRIM(decision_override), ''), '(none)') AS metric,
+              COUNT(*)::float AS value
+       FROM public.job_applications
+       WHERE $__timeFilter(created_at)
+         AND application_state = 'DECISION_MADE'::public.application_state_enum
+       GROUP BY 1
+       ORDER BY value DESC`,
+      'table',
+      { options: { orientation: 'horizontal', showValue: 'auto', stacking: 'none', xTickLabelRotation: 0 } }
     ),
   ];
   return d;
@@ -914,7 +1229,7 @@ function assignIds(doc) {
 const out = [
   ['09-active-customers.json', dash09],
   ['10-openai-cost.json', dash10],
-  ['11-ats-hiring-funnel.json', dash11],
+  ['11-ats-recruiter-hiring-funnel.json', dash11],
   ['12-user-signups.json', dash12],
   ['13-email-notifications.json', dash13],
   ['08-engagement.json', dash08],
