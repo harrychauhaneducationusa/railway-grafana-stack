@@ -1,6 +1,11 @@
 global:
   scrape_interval: 15s # Default scrape interval
 
+# Targets use Railway private DNS: <service-name>.railway.internal:<port>
+# Service names must match Settings → name for each service (canvas labels like
+# postgres-exporter-LLuc). Port must be the process listen port (usually Railway PORT).
+# Docs: https://docs.railway.com/private-networking
+
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
@@ -10,47 +15,35 @@ scrape_configs:
     scheme: http
     metrics_path: /metrics
     static_configs:
-      - targets: ['postgres-exporter.railway.internal:9187']
+      - targets: ['postgres-exporter-lluc.railway.internal:9187']
 
   - job_name: 'redis-exporter'
     scheme: http
     metrics_path: /metrics
     static_configs:
-      - targets: ['redis-exporter.railway.internal:9121']
+      # One exporter; extra Redis instances need extra targets or exporters if you want each scraped.
+      - targets: ['redis-exporter-fu0b.railway.internal:9121']
+
+  # mockcoach-ai — production API (GET /metrics on Express).
+  # When mockcoach-ai has METRICS_BEARER_TOKEN set, set the same value on this
+  # Prometheus service; entrypoint.sh writes it to bearer_token_file before start.
+  - job_name: 'mockcoach-ai'
+    scheme: http
+    metrics_path: /metrics
+    bearer_token_file: /prometheus/.secrets/mockcoach-ai-bearer
+    static_configs:
+      # Replace 8080 with this service’s Railway PORT if different.
+      - targets: ['mockcoach-ai.railway.internal:8080']
+
+  # mockcoach-worker-prod — BullMQ workers (GET /metrics on worker health server)
+  - job_name: 'mockcoach-worker-prod'
+    scheme: http
+    metrics_path: /metrics
+    static_configs:
+      # Replace 8080 with this service’s Railway PORT if different.
+      - targets: ['mockcoach-worker-prod.railway.internal:8080']
 
   # - job_name: 'example_api'
   #   scheme: http
   #   static_configs:
   #     - targets: ['example_api:9091']
-
-  # mockcoach-ai — production app
-  # Uncomment and set the target URL once the service is deployed on Railway.
-  # The /metrics endpoint is exposed by express-prometheus-middleware.
-  # - job_name: 'mockcoach-ai-prod'
-  #   scheme: https
-  #   static_configs:
-  #     - targets: ['<MOCKCOACH_AI_PROD_HOST>']
-  #   metrics_path: /metrics
-
-  # mockcoach-ai — staging app
-  # - job_name: 'mockcoach-ai-staging'
-  #   scheme: https
-  #   static_configs:
-  #     - targets: ['<MOCKCOACH_AI_STAGING_HOST>']
-  #   metrics_path: /metrics
-
-  # mockcoach-worker-prod — background job worker
-  - job_name: 'mockcoach-worker-prod'
-    scheme: http
-    metrics_path: /metrics
-    static_configs:
-      - targets: ['mockcoach-worker-prod.railway.internal:8080']
-
-  #  ? TODO: add your other services here
-  # - job_name: 'your-job-name'
-  #   scheme: https
-  #   static_configs:
-  #     - targets: ['URL_GOES_HERE']
-  #   basic_auth:
-  #     username: HTTP_AUTH_USERNAME_GOES_HERE
-  #     password: HTTP_AUTH_PASSWORD_GOES_HERE
