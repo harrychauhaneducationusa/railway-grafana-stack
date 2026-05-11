@@ -41,6 +41,20 @@ This template is perfect for teams who need a comprehensive observability soluti
 | `GF_DEFAULT_INSTANCE_NAME` | Name of your Grafana instance | `Grafana on Railway` |
 | `GF_INSTALL_PLUGINS` | Comma-separated list of Grafana plugins to install | `grafana-simple-json-datasource,grafana-piechart-panel,grafana-worldmap-panel,grafana-clock-panel` |
 
+### MockCoach Postgres dashboards (Active Customers, OpenAI cost, ATS, etc.)
+
+The **Grafana** service must expose the same connection variables your API uses against production Postgres. Set all of the following on the Grafana service (Railway usually injects them when you link the Postgres plugin; if you copy values by hand, do not skip the database name):
+
+| Variable | Purpose |
+|----------|---------|
+| `PGHOST` | Postgres host |
+| `PGPORT` | Port (often `5432`) |
+| `PGUSER` | User |
+| `PGPASSWORD` | Password |
+| `PGDATABASE` | **Default database name** (required; without it every Postgres panel shows “no default database”). Railway’s default is often `railway`. |
+
+After changing variables, redeploy Grafana and use **Connections → Data sources → MockCoach Postgres → Save & test**.
+
 ### Internal Service URLs
 
 The Grafana service exposes these environment variables that you can reference in your other Railway applications to easily send data to your observability stack:

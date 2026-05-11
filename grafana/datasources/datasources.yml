@@ -58,12 +58,14 @@ datasources:
     orgId: 1
     uid: grafana_mockcoach_pg
     url: $PGHOST:$PGPORT
-    # Default DB must be top-level for Postgres (not only jsonData); otherwise panels show "no default database".
+    # Default database: Grafana 11+ Postgres plugin reads this from jsonData (see official provision example).
+    # Top-level `database` is also set so older Grafana / API paths that map the root field stay populated.
     database: $PGDATABASE
     user: $PGUSER
     secureJsonData:
       password: $PGPASSWORD
     jsonData:
+      database: $PGDATABASE
       # Railway internal Postgres often works with prefer; use require only if you need strict TLS
       sslmode: prefer
       postgresVersion: 1500
