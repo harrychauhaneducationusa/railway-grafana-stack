@@ -6,6 +6,18 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+  - job_name: 'postgres-exporter'
+    scheme: http
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['postgres-exporter.railway.internal:9187']
+
+  - job_name: 'redis-exporter'
+    scheme: http
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['redis-exporter.railway.internal:9121']
+
   # - job_name: 'example_api'
   #   scheme: http
   #   static_configs:
