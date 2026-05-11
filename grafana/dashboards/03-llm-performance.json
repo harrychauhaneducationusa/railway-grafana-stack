@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "LLM usage and latency from llm_requests_total and llm_request_duration_seconds. **Folder:** MockCoach.",
+  "description": "Prometheus: llm_requests_total and llm_request_duration_seconds, filtered to scrape jobs mockcoach-ai and mockcoach-worker-prod (regex mockcoach.*). If empty: set Prometheus env MOCKCOACH_AI_METRICS_TARGET to host:port (Railway private DNS + that service PORT), same METRICS_BEARER_TOKEN as mockcoach-ai when /metrics is protected.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -89,7 +89,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (model) (rate(llm_requests_total{job=~\"$service\"}[5m]))",
+          "expr": "sum by (model) (rate(llm_requests_total{job=~\"mockcoach.*\"}[5m]))",
           "legendFormat": "{{model}}"
         }
       ]
@@ -145,7 +145,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(llm_requests_total{job=~\"$service\",status=\"circuit_open\"})",
+          "expr": "sum(llm_requests_total{job=~\"mockcoach.*\",status=\"circuit_open\"})",
           "legendFormat": "circuit_open"
         }
       ]
@@ -238,7 +238,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * sum(rate(llm_requests_total{job=~\"$service\",status=\"error\"}[5m])) / clamp_min(sum(rate(llm_requests_total{job=~\"$service\"}[5m])), 1e-9)",
+          "expr": "100 * sum(rate(llm_requests_total{job=~\"mockcoach.*\",status=\"error\"}[5m])) / clamp_min(sum(rate(llm_requests_total{job=~\"mockcoach.*\"}[5m])), 1e-9)",
           "legendFormat": "error %"
         }
       ]
@@ -320,17 +320,17 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le, model) (rate(llm_request_duration_seconds_bucket{job=~\"$service\"}[5m])))",
+          "expr": "histogram_quantile(0.50, sum by (le, model) (rate(llm_request_duration_seconds_bucket{job=~\"mockcoach.*\"}[5m])))",
           "legendFormat": "p50 {{model}}"
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(llm_request_duration_seconds_bucket{job=~\"$service\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(llm_request_duration_seconds_bucket{job=~\"mockcoach.*\"}[5m])))",
           "legendFormat": "p95 {{model}}"
         },
         {
           "refId": "C",
-          "expr": "histogram_quantile(0.99, sum by (le, model) (rate(llm_request_duration_seconds_bucket{job=~\"$service\"}[5m])))",
+          "expr": "histogram_quantile(0.99, sum by (le, model) (rate(llm_request_duration_seconds_bucket{job=~\"mockcoach.*\"}[5m])))",
           "legendFormat": "p99 {{model}}"
         }
       ]
@@ -374,7 +374,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (model) (rate(llm_requests_total{job=~\"$service\"}[5m]))",
+          "expr": "sum by (model) (rate(llm_requests_total{job=~\"mockcoach.*\"}[5m]))",
           "legendFormat": "{{model}}",
           "instant": true
         }
@@ -481,12 +481,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(llm_requests_total{job=~\"$service\"}[5m]))",
+          "expr": "sum(rate(llm_requests_total{job=~\"mockcoach.*\"}[5m]))",
           "legendFormat": "all requests"
         },
         {
           "refId": "B",
-          "expr": "sum(rate(llm_requests_total{job=~\"$service\",status=\"error\"}[5m]))",
+          "expr": "sum(rate(llm_requests_total{job=~\"mockcoach.*\",status=\"error\"}[5m]))",
           "legendFormat": "errors"
         }
       ]
@@ -499,36 +499,7 @@
     "production"
   ],
   "templating": {
-    "list": [
-      {
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafana_prometheus"
-        },
-        "definition": "label_values(up, job)",
-        "hide": 0,
-        "includeAll": true,
-        "allValue": ".*",
-        "label": "Scrape job (service)",
-        "multi": false,
-        "name": "service",
-        "options": [],
-        "query": {
-          "query": "label_values(up, job)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-3h",

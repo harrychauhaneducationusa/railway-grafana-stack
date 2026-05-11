@@ -7,11 +7,17 @@ SECRETS_DIR=/etc/prometheus/secrets
 mkdir -p "$SECRETS_DIR"
 umask 077
 printf '%s' "${METRICS_BEARER_TOKEN:-}" >"$SECRETS_DIR/mockcoach-ai-bearer"
+# Railway private scrape targets (must match each service’s listen port = that service’s Railway PORT).
+MOCKCOACH_AI_METRICS_TARGET="${MOCKCOACH_AI_METRICS_TARGET:-mockcoach-ai.railway.internal:8080}"
+MOCKCOACH_WORKER_METRICS_TARGET="${MOCKCOACH_WORKER_METRICS_TARGET:-mockcoach-worker-prod.railway.internal:8080}"
 # Railway health checks hit $PORT; Prometheus defaults to 9090 → "service unavailable" if they differ.
 LISTEN_PORT="${PORT:-9090}"
 # Self-scrape job uses localhost:9090 in prom.yml; align with LISTEN_PORT (writable copy; prom.yml is root-owned).
 RUNTIME_CFG=/tmp/prom.runtime.yml
-sed -e "s/localhost:9090/localhost:${LISTEN_PORT}/g" /etc/prometheus/prom.yml >"$RUNTIME_CFG"
+sed -e "s/localhost:9090/localhost:${LISTEN_PORT}/g" \
+    -e "s|__MOCKCOACH_AI_SCRAPE_TARGET__|${MOCKCOACH_AI_METRICS_TARGET}|g" \
+    -e "s|__MOCKCOACH_WORKER_SCRAPE_TARGET__|${MOCKCOACH_WORKER_METRICS_TARGET}|g" \
+    /etc/prometheus/prom.yml >"$RUNTIME_CFG"
 # Clear Custom Start Command in Railway so this entrypoint runs (bearer file + flags).
 exec /bin/prometheus \
   --config.file="$RUNTIME_CFG" \

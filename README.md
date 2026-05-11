@@ -55,6 +55,16 @@ The **Grafana** service must expose the same connection variables your API uses 
 
 After changing variables, redeploy Grafana and use **Connections → Data sources → MockCoach Postgres → Save & test**.
 
+### Prometheus → MockCoach API (`/metrics`, LLM dashboards)
+
+The **AI / LLM Performance** dashboard reads Prometheus counters (`llm_requests_total`, …), not Postgres. If those panels are empty:
+
+1. On the **Prometheus** service, set **`MOCKCOACH_AI_METRICS_TARGET`** to `your-api-service.railway.internal:PORT`, where **PORT** matches the **mockcoach-ai** service’s **`PORT`** on Railway (the listen port inside the container; it is often not `8080`).
+2. Optionally set **`MOCKCOACH_WORKER_METRICS_TARGET`** for the worker scrape (same pattern).
+3. If **mockcoach-ai** has **`METRICS_BEARER_TOKEN`** set, set the **same** token on the **Prometheus** service so `entrypoint.sh` can write the bearer file used in `prom.yml`.
+
+Redeploy **Prometheus** after changing these variables.
+
 ### Internal Service URLs
 
 The Grafana service exposes these environment variables that you can reference in your other Railway applications to easily send data to your observability stack:
