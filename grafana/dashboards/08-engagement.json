@@ -1,0 +1,554 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTHOG",
+      "label": "-- PostHog --",
+      "description": "Placeholder: map to Grafana TestData on import for sample charts, or install the PostHog datasource plugin and reconnect. Panel descriptions document analyticsService.js events to build in PostHog.",
+      "type": "datasource",
+      "pluginId": "testdata",
+      "pluginName": "TestData"
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "description": "Engagement & gamification. **Folder:** MockCoach.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "meta": {
+    "folderName": "MockCoach"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "content": "# PostHog placeholder\nThese panels use **TestData** so the dashboard imports cleanly. Map datasource **-- PostHog --** to TestData, or install a PostHog Grafana plugin and rebuild queries using the **event names** in each panel description.",
+        "mode": "markdown"
+      },
+      "title": "Setup",
+      "description": "PostHog datasource plugin is required for real analytics; see panel descriptions for event names."
+    },
+    {
+      "id": 2,
+      "title": "Badges Earned per Day",
+      "description": "PostHog event: **badge_earned**.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "testdata",
+        "uid": "${DS_POSTHOG}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "${DS_POSTHOG}"
+          },
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "badge_earned"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "XP Events per Day",
+      "description": "Instrument an **xp_awarded** (or similar) event in PostHog; placeholder until wired.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "testdata",
+        "uid": "${DS_POSTHOG}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "${DS_POSTHOG}"
+          },
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "xp (placeholder)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Leaderboard Active Users",
+      "description": "Define weekly active users with leaderboard exposure in PostHog; placeholder stat.",
+      "type": "stat",
+      "datasource": {
+        "type": "testdata",
+        "uid": "${DS_POSTHOG}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "${DS_POSTHOG}"
+          },
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "WAU proxy"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Learning Clicks Trend",
+      "description": "PostHog event: **learning_resource_clicked**.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "testdata",
+        "uid": "${DS_POSTHOG}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 11
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "${DS_POSTHOG}"
+          },
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "learning_resource_clicked"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Referrals Sent (placeholder)",
+      "description": "No dedicated event in list — add **referral_sent** or map from marketing events in PostHog.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "testdata",
+        "uid": "${DS_POSTHOG}"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 25,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "${DS_POSTHOG}"
+          },
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "referrals placeholder"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Connection Activity (sent / accepted)",
+      "description": "Stacked-style comparison: **connection_request_sent** vs **connection_request_accepted** (add rejected when tracked).",
+      "type": "timeseries",
+      "datasource": {
+        "type": "testdata",
+        "uid": "${DS_POSTHOG}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "${DS_POSTHOG}"
+          },
+          "refId": "A",
+          "scenarioId": "random_walk",
+          "alias": "sent"
+        },
+        {
+          "datasource": {
+            "type": "testdata",
+            "uid": "${DS_POSTHOG}"
+          },
+          "refId": "B",
+          "scenarioId": "random_walk",
+          "alias": "accepted"
+        }
+      ]
+    }
+  ],
+  "refresh": "1h",
+  "schemaVersion": 39,
+  "tags": [
+    "mockcoach",
+    "business"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Engagement & Gamification",
+  "uid": "mockcoach-engagement",
+  "version": 1
+}
