@@ -82,7 +82,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n         CASE WHEN candidate_id IS NULL THEN 'guest' ELSE 'registered' END AS metric,\n         COUNT(*)::float AS value\n       FROM job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
+          "rawSql": "SELECT\n         CASE WHEN candidate_id IS NULL THEN 'guest' ELSE 'registered' END AS metric,\n         COUNT(*)::float AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
           "refId": "A"
         }
       ]
@@ -126,7 +126,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value FROM job_postings WHERE LOWER(status) = 'active'",
+          "rawSql": "SELECT COUNT(*)::numeric AS value FROM public.job_postings WHERE LOWER(status) = 'active'",
           "refId": "A"
         }
       ]
@@ -186,7 +186,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('week', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('week', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]
@@ -225,7 +225,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT status AS metric, COUNT(*)::float AS value\n       FROM job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY status\n       ORDER BY value DESC",
+          "rawSql": "SELECT status AS metric, COUNT(*)::float AS value\n       FROM public.job_applications\n       WHERE $__timeFilter(created_at)\n       GROUP BY status\n       ORDER BY value DESC",
           "refId": "A"
         }
       ]
@@ -262,7 +262,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT jp.title, jp.id::text AS job_id, COUNT(ja.id) AS applications\n       FROM job_applications ja\n       JOIN job_postings jp ON jp.id = ja.job_id\n       WHERE $__timeFilter(ja.created_at)\n       GROUP BY jp.id, jp.title\n       ORDER BY applications DESC\n       LIMIT 25",
+          "rawSql": "SELECT jp.title, jp.id::text AS job_id, COUNT(ja.id) AS applications\n       FROM public.job_applications ja\n       JOIN public.job_postings jp ON jp.id = ja.job_id\n       WHERE $__timeFilter(ja.created_at)\n       GROUP BY jp.id, jp.title\n       ORDER BY applications DESC\n       LIMIT 25",
           "refId": "A"
         }
       ]

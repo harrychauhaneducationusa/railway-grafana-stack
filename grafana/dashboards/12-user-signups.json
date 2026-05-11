@@ -74,7 +74,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value FROM users WHERE deleted_at IS NULL",
+          "rawSql": "SELECT COUNT(*)::numeric AS value FROM public.users WHERE deleted_at IS NULL",
           "refId": "A"
         }
       ]
@@ -138,7 +138,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE is_verified) / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM users WHERE deleted_at IS NULL",
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE is_verified) / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM public.users WHERE deleted_at IS NULL",
           "refId": "A"
         }
       ]
@@ -204,7 +204,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM users\n       WHERE deleted_at IS NULL\n         AND is_verified = false\n         AND created_at < NOW() - INTERVAL '48 hours'",
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.users\n       WHERE deleted_at IS NULL\n         AND is_verified = false\n         AND created_at < NOW() - INTERVAL '48 hours'",
           "refId": "A"
         }
       ]
@@ -266,7 +266,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM users\n       WHERE deleted_at IS NULL AND $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.users\n       WHERE deleted_at IS NULL AND $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]
@@ -314,7 +314,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(auth_provider, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM users\n       WHERE deleted_at IS NULL AND $__timeFilter(created_at)\n       GROUP BY 1",
+          "rawSql": "SELECT COALESCE(auth_provider, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM public.users\n       WHERE deleted_at IS NULL AND $__timeFilter(created_at)\n       GROUP BY 1",
           "refId": "A"
         }
       ]
@@ -374,7 +374,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', deleted_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM users\n       WHERE deleted_at IS NOT NULL AND $__timeFilter(deleted_at)\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', deleted_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.users\n       WHERE deleted_at IS NOT NULL AND $__timeFilter(deleted_at)\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]
@@ -411,7 +411,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "WITH base AS (\n         SELECT id,\n                date_trunc('week', created_at) AS signup_week,\n                created_at,\n                last_login\n         FROM users\n         WHERE deleted_at IS NULL\n           AND created_at >= NOW() - INTERVAL '365 days'\n       )\n       SELECT signup_week::date AS cohort_week,\n              COUNT(*) AS signups,\n              COUNT(*) FILTER (\n                WHERE last_login IS NOT NULL\n                  AND last_login >= signup_week + INTERVAL '7 days'\n                  AND last_login < signup_week + INTERVAL '14 days'\n              ) AS active_week_after_signup\n       FROM base\n       GROUP BY signup_week\n       ORDER BY signup_week DESC\n       LIMIT 26",
+          "rawSql": "WITH base AS (\n         SELECT id,\n                date_trunc('week', created_at) AS signup_week,\n                created_at,\n                last_login\n         FROM public.users\n         WHERE deleted_at IS NULL\n           AND created_at >= NOW() - INTERVAL '365 days'\n       )\n       SELECT signup_week::date AS cohort_week,\n              COUNT(*) AS signups,\n              COUNT(*) FILTER (\n                WHERE last_login IS NOT NULL\n                  AND last_login >= signup_week + INTERVAL '7 days'\n                  AND last_login < signup_week + INTERVAL '14 days'\n              ) AS active_week_after_signup\n       FROM base\n       GROUP BY signup_week\n       ORDER BY signup_week DESC\n       LIMIT 26",
           "refId": "A"
         }
       ]

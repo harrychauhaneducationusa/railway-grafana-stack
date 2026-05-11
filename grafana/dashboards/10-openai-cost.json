@@ -115,7 +115,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(cost_estimate_usd), 0)::numeric AS value FROM ai_usage_log",
+          "rawSql": "SELECT COALESCE(SUM(cost_estimate_usd), 0)::numeric AS value FROM public.ai_usage_log",
           "refId": "A"
         }
       ]
@@ -161,7 +161,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n         CASE WHEN COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL) = 0 THEN 0\n         ELSE COALESCE(SUM(cost_estimate_usd),0) / COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL)\n         END::numeric AS value\n       FROM ai_usage_log",
+          "rawSql": "SELECT\n         CASE WHEN COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL) = 0 THEN 0\n         ELSE COALESCE(SUM(cost_estimate_usd),0) / COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL)\n         END::numeric AS value\n       FROM public.ai_usage_log",
           "refId": "A"
         }
       ]
@@ -226,7 +226,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT LEAST(100, ROUND(100.0 * COALESCE(SUM(cost_estimate_usd),0) / NULLIF(CAST('${monthly_budget}' AS NUMERIC), 0), 2))::numeric AS value\n       FROM ai_usage_log\n       WHERE created_at >= date_trunc('month', NOW())\n         AND created_at < date_trunc('month', NOW()) + INTERVAL '1 month'",
+          "rawSql": "SELECT LEAST(100, ROUND(100.0 * COALESCE(SUM(cost_estimate_usd),0) / NULLIF(CAST('${monthly_budget}' AS NUMERIC), 0), 2))::numeric AS value\n       FROM public.ai_usage_log\n       WHERE created_at >= date_trunc('month', NOW())\n         AND created_at < date_trunc('month', NOW()) + INTERVAL '1 month'",
           "refId": "A"
         }
       ]
@@ -286,7 +286,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              SUM(cost_estimate_usd)::double precision AS value\n       FROM ai_usage_log\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              SUM(cost_estimate_usd)::double precision AS value\n       FROM public.ai_usage_log\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]
@@ -334,7 +334,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(model_used, 'unknown') AS metric,\n              SUM(cost_estimate_usd)::float AS value\n       FROM ai_usage_log\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
+          "rawSql": "SELECT COALESCE(model_used, 'unknown') AS metric,\n              SUM(cost_estimate_usd)::float AS value\n       FROM public.ai_usage_log\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1",
           "refId": "A"
         }
       ]
@@ -373,7 +373,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT month_year AS metric,\n              SUM(ai_resume_uploads)::float AS value\n       FROM resume_ai_usage\n       GROUP BY month_year\n       ORDER BY month_year DESC\n       LIMIT 24",
+          "rawSql": "SELECT month_year AS metric,\n              SUM(ai_resume_uploads)::float AS value\n       FROM public.resume_ai_usage\n       GROUP BY month_year\n       ORDER BY month_year DESC\n       LIMIT 24",
           "refId": "A"
         }
       ]
@@ -435,7 +435,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM voice_coach_usage\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.voice_coach_usage\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]
@@ -477,7 +477,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\n         EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC')::int AS dow_utc,\n         EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')::int AS hour_utc,\n         COUNT(*)::int AS sessions\n       FROM voice_coach_usage\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1, 2\n       ORDER BY 1, 2",
+          "rawSql": "SELECT\n         EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC')::int AS dow_utc,\n         EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')::int AS hour_utc,\n         COUNT(*)::int AS sessions\n       FROM public.voice_coach_usage\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1, 2\n       ORDER BY 1, 2",
           "refId": "A"
         }
       ]

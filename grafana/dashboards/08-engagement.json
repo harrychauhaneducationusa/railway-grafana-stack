@@ -82,7 +82,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT status AS metric, COUNT(*)::float AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY status",
+          "rawSql": "SELECT status AS metric, COUNT(*)::float AS value\n       FROM public.referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY status",
           "refId": "A"
         }
       ]
@@ -145,7 +145,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'rewarded') / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)",
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'rewarded') / NULLIF(COUNT(*), 0), 2)::numeric AS value\n       FROM public.referrals\n       WHERE $__timeFilter(created_at)",
           "refId": "A"
         }
       ]
@@ -189,7 +189,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n         AND status = 'expired'",
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.referrals\n       WHERE $__timeFilter(created_at)\n         AND status = 'expired'",
           "refId": "A"
         }
       ]
@@ -231,7 +231,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT referrer_id::text, COUNT(*) AS referral_count\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY referrer_id\n       ORDER BY referral_count DESC\n       LIMIT 30",
+          "rawSql": "SELECT referrer_id::text, COUNT(*) AS referral_count\n       FROM public.referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY referrer_id\n       ORDER BY referral_count DESC\n       LIMIT 30",
           "refId": "A"
         }
       ]
@@ -291,7 +291,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.referrals\n       WHERE $__timeFilter(created_at)\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]

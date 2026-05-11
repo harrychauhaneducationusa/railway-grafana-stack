@@ -133,7 +133,7 @@ const tsFill = {
 function dash09() {
   const d = baseDash('Active Customers & Platform Health', 'mockcoach-active-customers', ['mockcoach', 'business', 'postgres'], {
     description:
-      'SQL on users, subscriptions, company_subscriptions. Requires **MockCoach Postgres** datasource (PGHOST/PGUSER/PGPASSWORD/PGDATABASE).',
+      'SQL on public.users, subscriptions tables, company_subscriptions. Requires **MockCoach Postgres** (PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE on Grafana). Datasource uses sslmode **prefer**.',
     time: { from: 'now-90d', to: 'now' },
   });
   d.panels = [
@@ -145,7 +145,7 @@ function dash09() {
       options: {
         mode: 'markdown',
         content:
-          '**subscriptions** uses `status`, `plan_id`, `created_at`. **users** uses `subscription_status`, `plan_tier`, `subscription_type`, `last_login`, `created_at`. **company_subscriptions** uses `plan_type`, `status`. Tune joins if your deployment uses `user_subscriptions` / `subscriptions_v2` instead.',
+          '**Troubleshooting:** If every panel shows errors, open **Connections → Data sources → MockCoach Postgres → Save & test**. Grafana needs **PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE** on this Railway service (copy from your Production Postgres / same as API). Queries use schema **`public.`** explicitly.\n\n**Tables:** `public.users`, `public.user_subscriptions` **or** `public.subscriptions` for billing rows, `public.company_subscriptions`.',
       },
     },
     pgPanel(
@@ -155,7 +155,7 @@ function dash09() {
       'stat',
       { h: 5, w: 6, x: 0, y: 3 },
       `SELECT COUNT(*)::numeric AS value
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NULL
          AND last_login IS NOT NULL
          AND last_login >= NOW() - INTERVAL '30 days'`,
@@ -165,14 +165,22 @@ function dash09() {
     pgPanel(
       3,
       'Users with active subscription row',
-      'Count of users joined to subscriptions with status active (legacy subscriptions table).',
+      'Users with **active** row in `user_subscriptions` or `subscriptions` (MockCoach uses both over time).',
       'stat',
       { h: 5, w: 6, x: 6, y: 3 },
       `SELECT COUNT(DISTINCT u.id)::numeric AS value
-       FROM users u
-       INNER JOIN subscriptions s ON s.user_id = u.id
+       FROM public.users u
        WHERE u.deleted_at IS NULL
-         AND LOWER(s.status) = 'active'`,
+         AND (
+           EXISTS (
+             SELECT 1 FROM public.user_subscriptions us
+             WHERE us.user_id = u.id AND LOWER(TRIM(us.status)) = 'active'
+           )
+           OR EXISTS (
+             SELECT 1 FROM public.subscriptions s
+             WHERE s.user_id = u.id AND LOWER(TRIM(s.status)) = 'active'
+           )
+         )`,
       'table',
       { options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' }, unit: 'short' }
     ),
@@ -183,8 +191,8 @@ function dash09() {
       'stat',
       { h: 5, w: 6, x: 12, y: 3 },
       `SELECT COUNT(*)::numeric AS value
-       FROM company_subscriptions
-       WHERE LOWER(status) = 'active'`,
+       FROM public.company_subscriptions
+       WHERE LOWER(TRIM(status)) = 'active'`,
       'table',
       { options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' }, unit: 'short' }
     ),
@@ -194,7 +202,7 @@ function dash09() {
       'COUNT(*) from users.',
       'stat',
       { h: 5, w: 6, x: 18, y: 3 },
-      `SELECT COUNT(*)::numeric AS value FROM users WHERE deleted_at IS NULL`,
+      `SELECT COUNT(*)::numeric AS value FROM public.users WHERE deleted_at IS NULL`,
       'table',
       { options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' }, unit: 'short' }
     ),
@@ -205,7 +213,7 @@ function dash09() {
       'piechart',
       { h: 8, w: 12, x: 0, y: 8 },
       `SELECT COALESCE(plan_tier, 'unknown') AS metric, COUNT(*)::float AS value
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NULL
        GROUP BY plan_tier`,
       'table',
@@ -220,7 +228,7 @@ function dash09() {
       'barchart',
       { h: 8, w: 12, x: 12, y: 8 },
       `SELECT plan_type AS metric, COUNT(*)::float AS value
-       FROM company_subscriptions
+       FROM public.company_subscriptions
        WHERE LOWER(status) = 'active'
        GROUP BY plan_type`,
       'table',
@@ -235,7 +243,7 @@ function dash09() {
       `SELECT
          date_trunc('day', last_login)::timestamp AS time,
          COUNT(*) AS value
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NULL
          AND last_login IS NOT NULL
          AND $__timeFilter(last_login)
@@ -251,7 +259,7 @@ function dash09() {
       'table',
       { h: 10, w: 24, x: 0, y: 25 },
       `SELECT id, email, created_at, last_login, subscription_status, subscription_type, plan_tier, is_verified
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NULL
        ORDER BY created_at DESC
        LIMIT 100`,
@@ -298,7 +306,7 @@ function dash10() {
       'SUM(cost_estimate_usd) from ai_usage_log.',
       'stat',
       { h: 5, w: 8, x: 0, y: 2 },
-      `SELECT COALESCE(SUM(cost_estimate_usd), 0)::numeric AS value FROM ai_usage_log`,
+      `SELECT COALESCE(SUM(cost_estimate_usd), 0)::numeric AS value FROM public.ai_usage_log`,
       'table',
       { unit: 'currencyUSD', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
     ),
@@ -312,7 +320,7 @@ function dash10() {
          CASE WHEN COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL) = 0 THEN 0
          ELSE COALESCE(SUM(cost_estimate_usd),0) / COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL)
          END::numeric AS value
-       FROM ai_usage_log`,
+       FROM public.ai_usage_log`,
       'table',
       { unit: 'currencyUSD', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
     ),
@@ -323,7 +331,7 @@ function dash10() {
       'gauge',
       { h: 5, w: 8, x: 16, y: 2 },
       `SELECT LEAST(100, ROUND(100.0 * COALESCE(SUM(cost_estimate_usd),0) / NULLIF(CAST('\${monthly_budget}' AS NUMERIC), 0), 2))::numeric AS value
-       FROM ai_usage_log
+       FROM public.ai_usage_log
        WHERE created_at >= date_trunc('month', NOW())
          AND created_at < date_trunc('month', NOW()) + INTERVAL '1 month'`,
       'table',
@@ -350,7 +358,7 @@ function dash10() {
       { h: 8, w: 12, x: 0, y: 7 },
       `SELECT date_trunc('day', created_at)::timestamp AS time,
               SUM(cost_estimate_usd)::double precision AS value
-       FROM ai_usage_log
+       FROM public.ai_usage_log
        WHERE $__timeFilter(created_at)
        GROUP BY 1 ORDER BY 1`,
       'time_series',
@@ -364,7 +372,7 @@ function dash10() {
       { h: 8, w: 12, x: 12, y: 7 },
       `SELECT COALESCE(model_used, 'unknown') AS metric,
               SUM(cost_estimate_usd)::float AS value
-       FROM ai_usage_log
+       FROM public.ai_usage_log
        WHERE $__timeFilter(created_at)
        GROUP BY 1`,
       'table',
@@ -378,7 +386,7 @@ function dash10() {
       { h: 8, w: 12, x: 0, y: 15 },
       `SELECT month_year AS metric,
               SUM(ai_resume_uploads)::float AS value
-       FROM resume_ai_usage
+       FROM public.resume_ai_usage
        GROUP BY month_year
        ORDER BY month_year DESC
        LIMIT 24`,
@@ -393,7 +401,7 @@ function dash10() {
       { h: 8, w: 12, x: 12, y: 15 },
       `SELECT date_trunc('day', created_at)::timestamp AS time,
               COUNT(*)::double precision AS value
-       FROM voice_coach_usage
+       FROM public.voice_coach_usage
        WHERE $__timeFilter(created_at)
        GROUP BY 1 ORDER BY 1`,
       'time_series',
@@ -409,7 +417,7 @@ function dash10() {
          EXTRACT(DOW FROM created_at AT TIME ZONE 'UTC')::int AS dow_utc,
          EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')::int AS hour_utc,
          COUNT(*)::int AS sessions
-       FROM voice_coach_usage
+       FROM public.voice_coach_usage
        WHERE $__timeFilter(created_at)
        GROUP BY 1, 2
        ORDER BY 1, 2`,
@@ -447,7 +455,7 @@ function dash11() {
       `SELECT
          CASE WHEN candidate_id IS NULL THEN 'guest' ELSE 'registered' END AS metric,
          COUNT(*)::float AS value
-       FROM job_applications
+       FROM public.job_applications
        WHERE $__timeFilter(created_at)
        GROUP BY 1`,
       'table',
@@ -459,7 +467,7 @@ function dash11() {
       'job_postings with status = active.',
       'stat',
       { h: 7, w: 8, x: 16, y: 3 },
-      `SELECT COUNT(*)::numeric AS value FROM job_postings WHERE LOWER(status) = 'active'`,
+      `SELECT COUNT(*)::numeric AS value FROM public.job_postings WHERE LOWER(status) = 'active'`,
       'table',
       { options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
     ),
@@ -471,7 +479,7 @@ function dash11() {
       { h: 8, w: 24, x: 0, y: 10 },
       `SELECT date_trunc('week', created_at)::timestamp AS time,
               COUNT(*)::double precision AS value
-       FROM job_applications
+       FROM public.job_applications
        WHERE $__timeFilter(created_at)
        GROUP BY 1 ORDER BY 1`,
       'time_series',
@@ -484,7 +492,7 @@ function dash11() {
       'barchart',
       { h: 8, w: 12, x: 0, y: 18 },
       `SELECT status AS metric, COUNT(*)::float AS value
-       FROM job_applications
+       FROM public.job_applications
        WHERE $__timeFilter(created_at)
        GROUP BY status
        ORDER BY value DESC`,
@@ -498,8 +506,8 @@ function dash11() {
       'table',
       { h: 8, w: 12, x: 12, y: 18 },
       `SELECT jp.title, jp.id::text AS job_id, COUNT(ja.id) AS applications
-       FROM job_applications ja
-       JOIN job_postings jp ON jp.id = ja.job_id
+       FROM public.job_applications ja
+       JOIN public.job_postings jp ON jp.id = ja.job_id
        WHERE $__timeFilter(ja.created_at)
        GROUP BY jp.id, jp.title
        ORDER BY applications DESC
@@ -523,7 +531,7 @@ function dash12() {
       'COUNT(*) WHERE deleted_at IS NULL.',
       'stat',
       { h: 5, w: 8, x: 0, y: 0 },
-      `SELECT COUNT(*)::numeric AS value FROM users WHERE deleted_at IS NULL`,
+      `SELECT COUNT(*)::numeric AS value FROM public.users WHERE deleted_at IS NULL`,
       'table',
       { unit: 'short', options: { reduceOptions: { calcs: ['lastNotNull'], fields: '', values: false }, colorMode: 'value', graphMode: 'none' } }
     ),
@@ -534,7 +542,7 @@ function dash12() {
       'gauge',
       { h: 5, w: 8, x: 8, y: 0 },
       `SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE is_verified) / NULLIF(COUNT(*), 0), 2)::numeric AS value
-       FROM users WHERE deleted_at IS NULL`,
+       FROM public.users WHERE deleted_at IS NULL`,
       'table',
       {
         unit: 'percent',
@@ -558,7 +566,7 @@ function dash12() {
       'stat',
       { h: 5, w: 8, x: 16, y: 0 },
       `SELECT COUNT(*)::numeric AS value
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NULL
          AND is_verified = false
          AND created_at < NOW() - INTERVAL '48 hours'`,
@@ -585,7 +593,7 @@ function dash12() {
       { h: 9, w: 16, x: 0, y: 5 },
       `SELECT date_trunc('day', created_at)::timestamp AS time,
               COUNT(*)::double precision AS value
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NULL AND $__timeFilter(created_at)
        GROUP BY 1 ORDER BY 1`,
       'time_series',
@@ -598,7 +606,7 @@ function dash12() {
       'piechart',
       { h: 9, w: 8, x: 16, y: 5 },
       `SELECT COALESCE(auth_provider, 'unknown') AS metric, COUNT(*)::float AS value
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NULL AND $__timeFilter(created_at)
        GROUP BY 1`,
       'table',
@@ -612,7 +620,7 @@ function dash12() {
       { h: 8, w: 12, x: 0, y: 14 },
       `SELECT date_trunc('day', deleted_at)::timestamp AS time,
               COUNT(*)::double precision AS value
-       FROM users
+       FROM public.users
        WHERE deleted_at IS NOT NULL AND $__timeFilter(deleted_at)
        GROUP BY 1 ORDER BY 1`,
       'time_series',
@@ -629,7 +637,7 @@ function dash12() {
                 date_trunc('week', created_at) AS signup_week,
                 created_at,
                 last_login
-         FROM users
+         FROM public.users
          WHERE deleted_at IS NULL
            AND created_at >= NOW() - INTERVAL '365 days'
        )
@@ -665,7 +673,7 @@ function dash13() {
       'stat',
       { h: 4, w: 6, x: 0, y: 0 },
       `SELECT COUNT(*)::numeric AS value
-       FROM notifications
+       FROM public.notifications
        WHERE $__timeFilter(created_at)
          AND channel IN ('email', 'both')`,
       'table',
@@ -678,7 +686,7 @@ function dash13() {
       'gauge',
       { h: 4, w: 6, x: 6, y: 0 },
       `SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE NOT is_read) / NULLIF(COUNT(*),0), 2)::numeric AS value
-       FROM notifications
+       FROM public.notifications
        WHERE $__timeFilter(created_at)`,
       'table',
       {
@@ -721,7 +729,7 @@ function dash13() {
       'barchart',
       { h: 8, w: 12, x: 0, y: 5 },
       `SELECT type AS metric, COUNT(*)::float AS value
-       FROM notifications
+       FROM public.notifications
        WHERE $__timeFilter(created_at)
          AND channel IN ('email', 'both')
        GROUP BY type
@@ -738,7 +746,7 @@ function dash13() {
       { h: 8, w: 12, x: 12, y: 5 },
       `SELECT date_trunc('day', created_at)::timestamp AS time,
               COUNT(*)::double precision AS value
-       FROM notifications
+       FROM public.notifications
        WHERE $__timeFilter(created_at)
          AND channel IN ('email', 'both')
        GROUP BY 1 ORDER BY 1`,
@@ -753,7 +761,7 @@ function dash13() {
       { h: 8, w: 24, x: 0, y: 13 },
       `SELECT date_trunc('day', created_at)::timestamp AS time,
               COUNT(*)::double precision AS value
-       FROM notifications
+       FROM public.notifications
        WHERE $__timeFilter(created_at)
          AND channel IN ('email', 'both')
          AND (
@@ -817,7 +825,7 @@ function dash08() {
       'barchart',
       { h: 8, w: 12, x: 0, y: 3 },
       `SELECT status AS metric, COUNT(*)::float AS value
-       FROM referrals
+       FROM public.referrals
        WHERE $__timeFilter(created_at)
        GROUP BY status`,
       'table',
@@ -830,7 +838,7 @@ function dash08() {
       'stat',
       { h: 5, w: 6, x: 12, y: 3 },
       `SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE status = 'rewarded') / NULLIF(COUNT(*), 0), 2)::numeric AS value
-       FROM referrals
+       FROM public.referrals
        WHERE $__timeFilter(created_at)`,
       'table',
       {
@@ -853,7 +861,7 @@ function dash08() {
       'stat',
       { h: 5, w: 6, x: 18, y: 3 },
       `SELECT COUNT(*)::numeric AS value
-       FROM referrals
+       FROM public.referrals
        WHERE $__timeFilter(created_at)
          AND status = 'expired'`,
       'table',
@@ -866,7 +874,7 @@ function dash08() {
       'table',
       { h: 9, w: 12, x: 0, y: 11 },
       `SELECT referrer_id::text, COUNT(*) AS referral_count
-       FROM referrals
+       FROM public.referrals
        WHERE $__timeFilter(created_at)
        GROUP BY referrer_id
        ORDER BY referral_count DESC
@@ -882,7 +890,7 @@ function dash08() {
       { h: 9, w: 12, x: 12, y: 11 },
       `SELECT date_trunc('day', created_at)::timestamp AS time,
               COUNT(*)::double precision AS value
-       FROM referrals
+       FROM public.referrals
        WHERE $__timeFilter(created_at)
        GROUP BY 1 ORDER BY 1`,
       'time_series',

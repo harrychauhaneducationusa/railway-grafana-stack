@@ -73,7 +73,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')",
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')",
           "refId": "A"
         }
       ]
@@ -137,7 +137,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE NOT is_read) / NULLIF(COUNT(*),0), 2)::numeric AS value\n       FROM notifications\n       WHERE $__timeFilter(created_at)",
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE NOT is_read) / NULLIF(COUNT(*),0), 2)::numeric AS value\n       FROM public.notifications\n       WHERE $__timeFilter(created_at)",
           "refId": "A"
         }
       ]
@@ -266,7 +266,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT type AS metric, COUNT(*)::float AS value\n       FROM notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')\n       GROUP BY type\n       ORDER BY value DESC\n       LIMIT 10",
+          "rawSql": "SELECT type AS metric, COUNT(*)::float AS value\n       FROM public.notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')\n       GROUP BY type\n       ORDER BY value DESC\n       LIMIT 10",
           "refId": "A"
         }
       ]
@@ -328,7 +328,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]
@@ -388,7 +388,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')\n         AND (\n           LOWER(type) LIKE '%ats%'\n           OR LOWER(title) LIKE '%apply%'\n           OR LOWER(title) LIKE '%application%'\n           OR LOWER(body) LIKE '%apply%'\n         )\n       GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT date_trunc('day', created_at)::timestamp AS time,\n              COUNT(*)::double precision AS value\n       FROM public.notifications\n       WHERE $__timeFilter(created_at)\n         AND channel IN ('email', 'both')\n         AND (\n           LOWER(type) LIKE '%ats%'\n           OR LOWER(title) LIKE '%apply%'\n           OR LOWER(title) LIKE '%application%'\n           OR LOWER(body) LIKE '%apply%'\n         )\n       GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ]

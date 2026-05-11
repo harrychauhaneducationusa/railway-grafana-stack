@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "SQL on users, subscriptions, company_subscriptions. Requires **MockCoach Postgres** datasource (PGHOST/PGUSER/PGPASSWORD/PGDATABASE).",
+  "description": "SQL on public.users, subscriptions tables, company_subscriptions. Requires **MockCoach Postgres** (PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE on Grafana). Datasource uses sslmode **prefer**.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -45,7 +45,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "**subscriptions** uses `status`, `plan_id`, `created_at`. **users** uses `subscription_status`, `plan_tier`, `subscription_type`, `last_login`, `created_at`. **company_subscriptions** uses `plan_type`, `status`. Tune joins if your deployment uses `user_subscriptions` / `subscriptions_v2` instead."
+        "content": "**Troubleshooting:** If every panel shows errors, open **Connections → Data sources → MockCoach Postgres → Save & test**. Grafana needs **PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE** on this Railway service (copy from your Production Postgres / same as API). Queries use schema **`public.`** explicitly.\n\n**Tables:** `public.users`, `public.user_subscriptions` **or** `public.subscriptions` for billing rows, `public.company_subscriptions`."
       }
     },
     {
@@ -89,7 +89,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM users\n       WHERE deleted_at IS NULL\n         AND last_login IS NOT NULL\n         AND last_login >= NOW() - INTERVAL '30 days'",
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.users\n       WHERE deleted_at IS NULL\n         AND last_login IS NOT NULL\n         AND last_login >= NOW() - INTERVAL '30 days'",
           "refId": "A"
         }
       ]
@@ -98,7 +98,7 @@
       "id": 3,
       "type": "stat",
       "title": "Users with active subscription row",
-      "description": "Count of users joined to subscriptions with status active (legacy subscriptions table).",
+      "description": "Users with **active** row in `user_subscriptions` or `subscriptions` (MockCoach uses both over time).",
       "datasource": {
         "type": "postgres",
         "uid": "grafana_mockcoach_pg"
@@ -135,7 +135,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(DISTINCT u.id)::numeric AS value\n       FROM users u\n       INNER JOIN subscriptions s ON s.user_id = u.id\n       WHERE u.deleted_at IS NULL\n         AND LOWER(s.status) = 'active'",
+          "rawSql": "SELECT COUNT(DISTINCT u.id)::numeric AS value\n       FROM public.users u\n       WHERE u.deleted_at IS NULL\n         AND (\n           EXISTS (\n             SELECT 1 FROM public.user_subscriptions us\n             WHERE us.user_id = u.id AND LOWER(TRIM(us.status)) = 'active'\n           )\n           OR EXISTS (\n             SELECT 1 FROM public.subscriptions s\n             WHERE s.user_id = u.id AND LOWER(TRIM(s.status)) = 'active'\n           )\n         )",
           "refId": "A"
         }
       ]
@@ -181,7 +181,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM company_subscriptions\n       WHERE LOWER(status) = 'active'",
+          "rawSql": "SELECT COUNT(*)::numeric AS value\n       FROM public.company_subscriptions\n       WHERE LOWER(TRIM(status)) = 'active'",
           "refId": "A"
         }
       ]
@@ -227,7 +227,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::numeric AS value FROM users WHERE deleted_at IS NULL",
+          "rawSql": "SELECT COUNT(*)::numeric AS value FROM public.users WHERE deleted_at IS NULL",
           "refId": "A"
         }
       ]
@@ -275,7 +275,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(plan_tier, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM users\n       WHERE deleted_at IS NULL\n       GROUP BY plan_tier",
+          "rawSql": "SELECT COALESCE(plan_tier, 'unknown') AS metric, COUNT(*)::float AS value\n       FROM public.users\n       WHERE deleted_at IS NULL\n       GROUP BY plan_tier",
           "refId": "A"
         }
       ]
@@ -314,7 +314,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT plan_type AS metric, COUNT(*)::float AS value\n       FROM company_subscriptions\n       WHERE LOWER(status) = 'active'\n       GROUP BY plan_type",
+          "rawSql": "SELECT plan_type AS metric, COUNT(*)::float AS value\n       FROM public.company_subscriptions\n       WHERE LOWER(status) = 'active'\n       GROUP BY plan_type",
           "refId": "A"
         }
       ]
@@ -374,7 +374,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n         date_trunc('day', last_login)::timestamp AS time,\n         COUNT(*) AS value\n       FROM users\n       WHERE deleted_at IS NULL\n         AND last_login IS NOT NULL\n         AND $__timeFilter(last_login)\n       GROUP BY 1\n       ORDER BY 1",
+          "rawSql": "SELECT\n         date_trunc('day', last_login)::timestamp AS time,\n         COUNT(*) AS value\n       FROM public.users\n       WHERE deleted_at IS NULL\n         AND last_login IS NOT NULL\n         AND $__timeFilter(last_login)\n       GROUP BY 1\n       ORDER BY 1",
           "refId": "A"
         }
       ]
@@ -411,7 +411,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT id, email, created_at, last_login, subscription_status, subscription_type, plan_tier, is_verified\n       FROM users\n       WHERE deleted_at IS NULL\n       ORDER BY created_at DESC\n       LIMIT 100",
+          "rawSql": "SELECT id, email, created_at, last_login, subscription_status, subscription_type, plan_tier, is_verified\n       FROM public.users\n       WHERE deleted_at IS NULL\n       ORDER BY created_at DESC\n       LIMIT 100",
           "refId": "A"
         }
       ]

@@ -63,7 +63,9 @@ datasources:
       password: $PGPASSWORD
     jsonData:
       database: $PGDATABASE
-      sslmode: require
+      # Railway internal Postgres often works with prefer; use require only if you need strict TLS
+      sslmode: prefer
+      postgresVersion: 1500
       maxOpenConns: 5
       maxIdleConns: 2
       connMaxLifetime: 14400
