@@ -47,3 +47,14 @@ scrape_configs:
   #   scheme: http
   #   static_configs:
   #     - targets: ['example_api:9091']
+
+  # ── Railway billing exporter ──────────────────────────────────────────────
+  - job_name: 'railway-billing-exporter'
+    scheme: https
+    metrics_path: '/metrics'
+    scrape_interval: 300s
+    static_configs:
+      - targets: ['railway-billing-exporter-production.up.railway.app']
+        labels:
+          service: 'railway-billing-exporter'
+          environment: 'production'
