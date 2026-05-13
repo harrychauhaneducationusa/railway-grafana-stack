@@ -557,3 +557,37 @@ groups:
         labels:
           severity: critical
         isPaused: false
+
+# ── Contact Points ───────────────────────────────────────────────────────────
+contactPoints:
+  - orgId: 1
+    name: email-admin
+    receivers:
+      - uid: email-admin-receiver
+        type: email
+        settings:
+          addresses: admin@synmoraai.com
+          singleEmail: false
+        disableResolveMessage: false
+
+# ── Notification Policies ────────────────────────────────────────────────────
+policies:
+  - orgId: 1
+    receiver: email-admin
+    group_by: ['grafana_folder', 'alertname']
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - receiver: email-admin
+        matchers:
+          - severity = critical
+        group_wait: 10s
+        group_interval: 2m
+        repeat_interval: 1h
+      - receiver: email-admin
+        matchers:
+          - severity = warning
+        group_wait: 1m
+        group_interval: 10m
+        repeat_interval: 6h
