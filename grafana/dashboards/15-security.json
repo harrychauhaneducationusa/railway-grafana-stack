@@ -1,0 +1,479 @@
+{
+  "uid": "mockcoach-security",
+  "title": "Security & Suspicious Activity",
+  "tags": ["security", "mockcoach"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "custom",
+        "label": "Service",
+        "current": { "value": "mockcoach-ai", "text": "mockcoach-ai" },
+        "options": [
+          { "value": "mockcoach-ai", "text": "mockcoach-ai", "selected": true },
+          { "value": "mockcoach-staging", "text": "mockcoach-staging", "selected": false }
+        ],
+        "query": "mockcoach-ai,mockcoach-staging"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Rate Limiting",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "Rate Limit Hits (429s) — per minute",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 1, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", status=\"429\"}[1m])) by (job)",
+          "legendFormat": "{{job}} — 429s"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Rate Limit Hit Rate (% of total requests)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 12, "y": 1, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percentunit",
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.15 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", status=\"429\"}[5m])) / sum(rate(http_requests_total{job=~\"$service\"}[5m]))",
+          "legendFormat": "Rate limit %"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Top Routes by 429s (last 15m)",
+      "type": "table",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 9, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "429 hits/min" }] }
+        ]
+      },
+      "options": { "sortBy": [{ "displayName": "429 hits/min", "desc": true }] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "topk(10, sum by (route) (rate(http_requests_total{job=~\"$service\", status=\"429\"}[15m])))",
+          "legendFormat": "{{route}}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        { "id": "sortBy", "options": { "fields": [{ "desc": true, "displayName": "Value" }] } },
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "route": "Route" } } }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Current 429 Rate (last 5m)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 12, "y": 9, "w": 6, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.5 },
+              { "color": "red", "value": 2 }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", status=\"429\"}[5m]))",
+          "legendFormat": "429/s"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Total 429s (last 1h)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 18, "y": 9, "w": 6, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(increase(http_requests_total{job=~\"$service\", status=\"429\"}[1h]))",
+          "legendFormat": "Total 429s/1h"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Authentication Attacks",
+      "gridPos": { "x": 0, "y": 17, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 8,
+      "title": "Auth Failure Rate (4xx on /api/auth routes)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.1 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", route=~\"/api/auth/.*\", status=~\"4..\"}[1m])) by (status)",
+          "legendFormat": "HTTP {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Login Endpoint Traffic (all statuses)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", route=~\"/api/auth/login.*\"}[1m])) by (status)",
+          "legendFormat": "login HTTP {{status}}"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", route=~\"/api/auth/register.*\"}[1m])) by (status)",
+          "legendFormat": "register HTTP {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Brute Force Indicator (login 401s spike, 5m window)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 26, "w": 24, "h": 7 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 20 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(increase(http_requests_total{job=~\"$service\", route=~\"/api/auth/login.*\", status=\"401\"}[5m]))",
+          "legendFormat": "Login 401s (5m)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(increase(http_requests_total{job=~\"$service\", route=~\"/api/auth/login.*\", status=\"429\"}[5m]))",
+          "legendFormat": "Login 429s — rate limited (5m)"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "ATS Guest Apply (Public Endpoint)",
+      "gridPos": { "x": 0, "y": 33, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 12,
+      "title": "ATS Guest Apply — Request Rate by Status",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 34, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", route=~\"/api/ats/guest.*\"}[1m])) by (status)",
+          "legendFormat": "HTTP {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "ATS Turnstile Failures (403s on guest routes)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 12, "y": 34, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "dark-orange", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.1 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", route=~\"/api/ats/guest.*\", status=\"403\"}[1m]))",
+          "legendFormat": "Turnstile/auth failures (403)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", route=~\"/api/ats/guest.*\", status=\"429\"}[1m]))",
+          "legendFormat": "Rate limited (429)"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "ATS Guest Apply — 429 + 403 total (last 1h)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 42, "w": 8, "h": 4 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(increase(http_requests_total{job=~\"$service\", route=~\"/api/ats/guest.*\", status=~\"429|403\"}[1h]))",
+          "legendFormat": "Blocked (1h)"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "row",
+      "title": "Anomalous Traffic Patterns",
+      "gridPos": { "x": 0, "y": 46, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 16,
+      "title": "5xx Error Spike (server errors)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 47, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "red", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.2 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", status=~\"5..\"}[1m])) by (status)",
+          "legendFormat": "HTTP {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Request Volume Anomaly (z-score proxy — current vs 1h avg)",
+      "description": "Sharp spikes above the 1h moving average indicate traffic bursts — possible scraping, DDoS, or bot activity.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 12, "y": 47, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\"}[1m]))",
+          "legendFormat": "Current RPS (1m)"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(avg_over_time(rate(http_requests_total{job=~\"$service\"}[1m])[1h:1m]))",
+          "legendFormat": "1h rolling avg RPS"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "High-Volume IPs — Unique Source IP Proxy (Redis key count)",
+      "description": "Tracks total rate limit Redis key count as a proxy for unique IP activity volume. A sudden jump indicates new sources hitting limits.",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 0, "y": 55, "w": 12, "h": 7 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "redis_db_keys{job=\"redis-prod\"}",
+          "legendFormat": "Redis total keys (prod)"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Payment Endpoint Abuse (4xx on /api/payments)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "gridPos": { "x": 12, "y": 55, "w": 12, "h": 7 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "dark-red", "mode": "fixed" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.2 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", route=~\"/api/payments.*\", status=~\"4..\"}[1m])) by (status)",
+          "legendFormat": "Payment HTTP {{status}}"
+        }
+      ]
+    }
+  ]
+}
