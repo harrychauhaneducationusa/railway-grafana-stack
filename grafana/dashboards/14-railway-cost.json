@@ -1,0 +1,228 @@
+{
+  "uid": "railway-cost",
+  "title": "Railway Infrastructure Cost",
+  "tags": ["railway", "billing", "cost"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-30d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Current Spend (This Period)",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 12 },
+              { "color": "red", "value": 18 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background", "graphMode": "none" },
+      "targets": [{ "expr": "railway_current_usage_usd", "legendFormat": "Current Spend", "refId": "A" }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Compute Limit",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "color": { "mode": "fixed", "fixedColor": "blue" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "targets": [{ "expr": "railway_compute_usage_limit_usd", "legendFormat": "Compute Limit", "refId": "A" }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Agent Usage",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 16 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "targets": [{ "expr": "railway_agent_usage_usd", "legendFormat": "Agent Usage", "refId": "A" }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Agent Limit",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "color": { "mode": "fixed", "fixedColor": "purple" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "targets": [{ "expr": "railway_agent_usage_limit_usd", "legendFormat": "Agent Limit", "refId": "A" }]
+    },
+    {
+      "id": 5,
+      "type": "gauge",
+      "title": "Compute Spend vs Limit",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "min": 0,
+          "max": 50,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 45 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [{ "expr": "railway_compute_usage_usd", "legendFormat": "Compute Spend", "refId": "A" }]
+    },
+    {
+      "id": 6,
+      "type": "gauge",
+      "title": "Agent Spend vs Limit",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "min": 0,
+          "max": 20,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 12 },
+              { "color": "red", "value": 18 }
+            ]
+          }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [{ "expr": "railway_agent_usage_usd", "legendFormat": "Agent Spend", "refId": "A" }]
+    },
+    {
+      "id": 7,
+      "type": "bargauge",
+      "title": "Monthly Billing History",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 0,
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 15 },
+              { "color": "red", "value": 19 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [{ "expr": "railway_billing_history_usd", "legendFormat": "{{month}}", "refId": "A" }]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Current Spend Over Time",
+      "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "gradientMode": "opacity" }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "expr": "railway_current_usage_usd", "legendFormat": "Total Spend", "refId": "A" },
+        { "expr": "railway_compute_usage_usd", "legendFormat": "Compute Spend", "refId": "B" },
+        { "expr": "railway_agent_usage_usd", "legendFormat": "Agent Spend", "refId": "C" }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Scrape Status",
+      "gridPos": { "x": 0, "y": 28, "w": 6, "h": 3 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "OK", "color": "green" }, "0": { "text": "FAILED", "color": "red" } } }
+          ],
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "targets": [{ "expr": "railway_billing_scrape_success", "legendFormat": "Scrape", "refId": "A" }]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Last Scraped",
+      "gridPos": { "x": 6, "y": 28, "w": 6, "h": 3 },
+      "datasource": { "type": "prometheus", "uid": "grafana_prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dateTimeFromNow",
+          "color": { "mode": "fixed", "fixedColor": "text" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "none" },
+      "targets": [{ "expr": "railway_billing_last_scrape_unix * 1000", "legendFormat": "Last Scrape", "refId": "A" }]
+    }
+  ]
+}
