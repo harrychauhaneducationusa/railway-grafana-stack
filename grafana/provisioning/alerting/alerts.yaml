@@ -226,12 +226,12 @@ groups:
                   query: { params: [B] }
                   reducer: { params: [], type: last }
                   type: query
-        noDataState: NoData
+        noDataState: OK
         execErrState: Alerting
         for: 3m
         annotations:
           summary: "API 5xx error rate is above 5%"
-          description: "Error rate: {{ $values.B.Value | printf \"%.1f\" }}%"
+          description: "Error rate: {{ if $values.B }}{{ $values.B.Value | printf \"%.1f\" }}{{ else }}0.0{{ end }}%"
         labels:
           severity: critical
         isPaused: false
