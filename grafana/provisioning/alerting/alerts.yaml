@@ -434,7 +434,7 @@ groups:
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: grafana_prometheus
             model:
-              expr: "redis_memory_used_bytes / redis_memory_max_bytes * 100"
+              expr: "redis_memory_used_bytes / clamp_min(redis_memory_max_bytes, 1) * 100"
               instant: true
               refId: A
           - refId: B
@@ -460,12 +460,12 @@ groups:
                   query: { params: [B] }
                   reducer: { params: [], type: last }
                   type: query
-        noDataState: NoData
+        noDataState: OK
         execErrState: Alerting
         for: 5m
         annotations:
           summary: "Redis memory usage is above 80%"
-          description: "Memory used: {{ $values.B.Value | printf \"%.1f\" }}%"
+          description: "Memory used: {{ if $values.B }}{{ $values.B.Value | printf \"%.1f\" }}{{ else }}0.0{{ end }}%"
         labels:
           severity: warning
         isPaused: false
