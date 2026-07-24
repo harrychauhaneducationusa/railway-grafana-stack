@@ -426,6 +426,9 @@ groups:
     interval: 1m
     rules:
 
+      # Railway Redis often has maxmemory=0 (unlimited). Dividing used/max then
+      # yields +Inf (or used/1 via clamp_min) → absurd "%"/always firing.
+      # When max is set: alert on >80% of maxmemory. When unset: absolute 400MiB.
       - uid: redis-memory-high
         title: "Redis Memory Usage > 80%"
         condition: C
@@ -434,7 +437,53 @@ groups:
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: grafana_prometheus
             model:
-              expr: "redis_memory_used_bytes / clamp_min(redis_memory_max_bytes, 1) * 100"
+              expr: "(redis_memory_max_bytes > 0 and (redis_memory_used_bytes / redis_memory_max_bytes) > bool 0.8) or (redis_memory_max_bytes == 0 and redis_memory_used_bytes > bool (400 * 1024 * 1024))"
+              instant: true
+              refId: A
+          - refId: B
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+              datasource: { type: __expr__, uid: __expr__ }
+          - refId: C
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              datasource: { type: __expr__, uid: __expr__ }
+              conditions:
+                - evaluator: { params: [0], type: gt }
+                  operator: { type: and }
+                  query: { params: [B] }
+                  reducer: { params: [], type: last }
+                  type: query
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Used memory is >80% of maxmemory, or >400MiB while maxmemory is unset (0)."
+        labels:
+          severity: warning
+        isPaused: false
+
+      # Never divide a label-less sum by pg_settings_max_connections without
+      # scalar()/on() — empty vector → DatasourceNoData / "%!f(<nil>)%".
+      - uid: postgres-connections-high
+        title: "Postgres Active Connections > 80%"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: grafana_prometheus
+            model:
+              expr: "sum(pg_stat_activity_count{datname=\"railway\"}) / scalar(pg_settings_max_connections) * 100"
               instant: true
               refId: A
           - refId: B
@@ -464,52 +513,8 @@ groups:
         execErrState: Alerting
         for: 5m
         annotations:
-          summary: "Redis memory usage is above 80%"
-          description: "Memory used: {{ if $values.B }}{{ $values.B.Value | printf \"%.1f\" }}{{ else }}0.0{{ end }}%"
-        labels:
-          severity: warning
-        isPaused: false
-
-      - uid: postgres-connections-high
-        title: "Postgres Active Connections > 80%"
-        condition: C
-        data:
-          - refId: A
-            relativeTimeRange: { from: 300, to: 0 }
-            datasourceUid: grafana_prometheus
-            model:
-              expr: "pg_stat_activity_count / pg_settings_max_connections * 100"
-              instant: true
-              refId: A
-          - refId: B
-            relativeTimeRange: { from: 300, to: 0 }
-            datasourceUid: __expr__
-            model:
-              type: reduce
-              expression: A
-              reducer: last
-              refId: B
-              datasource: { type: __expr__, uid: __expr__ }
-          - refId: C
-            relativeTimeRange: { from: 300, to: 0 }
-            datasourceUid: __expr__
-            model:
-              type: threshold
-              expression: B
-              refId: C
-              datasource: { type: __expr__, uid: __expr__ }
-              conditions:
-                - evaluator: { params: [80], type: gt }
-                  operator: { type: and }
-                  query: { params: [B] }
-                  reducer: { params: [], type: last }
-                  type: query
-        noDataState: NoData
-        execErrState: Alerting
-        for: 5m
-        annotations:
           summary: "Postgres connection pool is above 80% capacity"
-          description: "Connection usage: {{ $values.B.Value | printf \"%.1f\" }}%"
+          description: "Connection usage: {{ if $values.B }}{{ $values.B.Value | printf \"%.1f\" }}{{ else }}0.0{{ end }}%"
         labels:
           severity: warning
         isPaused: false
