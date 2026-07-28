@@ -331,6 +331,8 @@ groups:
     interval: 1m
     rules:
 
+      # App exports mockcoach_worker_* (not bullmq_jobs_*). Wrong names →
+      # empty vectors → DatasourceNoData / "%!f(<nil>)%".
       - uid: worker-high-failure-rate
         title: "Worker Job Failure Rate > 10%"
         condition: C
@@ -339,7 +341,7 @@ groups:
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: grafana_prometheus
             model:
-              expr: "sum(rate(bullmq_jobs_failed_total[5m])) / (sum(rate(bullmq_jobs_completed_total[5m])) + sum(rate(bullmq_jobs_failed_total[5m]))) * 100"
+              expr: "(sum(rate(mockcoach_worker_jobs_total{status=\"failed\"}[5m])) or vector(0)) / clamp_min((sum(rate(mockcoach_worker_jobs_total[5m])) or vector(0)), 1e-9) * 100"
               instant: true
               refId: A
           - refId: B
@@ -365,12 +367,12 @@ groups:
                   query: { params: [B] }
                   reducer: { params: [], type: last }
                   type: query
-        noDataState: NoData
+        noDataState: OK
         execErrState: Alerting
         for: 5m
         annotations:
           summary: "BullMQ worker job failure rate is above 10%"
-          description: "Failure rate: {{ $values.B.Value | printf \"%.1f\" }}%"
+          description: "Failure rate: {{ if $values.B }}{{ $values.B.Value | printf \"%.1f\" }}{{ else }}0.0{{ end }}%"
         labels:
           severity: warning
         isPaused: false
@@ -383,7 +385,7 @@ groups:
             relativeTimeRange: { from: 300, to: 0 }
             datasourceUid: grafana_prometheus
             model:
-              expr: "sum(bullmq_jobs_waiting_total)"
+              expr: "sum(mockcoach_worker_queue_depth)"
               instant: true
               refId: A
           - refId: B
@@ -409,12 +411,12 @@ groups:
                   query: { params: [B] }
                   reducer: { params: [], type: last }
                   type: query
-        noDataState: NoData
+        noDataState: OK
         execErrState: Alerting
         for: 10m
         annotations:
           summary: "BullMQ queue backlog is above 500 waiting jobs"
-          description: "Waiting jobs: {{ $values.B.Value }}"
+          description: "Waiting jobs: {{ if $values.B }}{{ $values.B.Value }}{{ else }}0{{ end }}"
         labels:
           severity: warning
         isPaused: false
